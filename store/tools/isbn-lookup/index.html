@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ISBN & Book Metadata — FreeBookStore</title>
+<meta name="description" content="Look up books by ISBN, validate, convert ISBN-10/13, export citations.">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#faf9f7;--panel:#fff;--ink:#1c1917;--muted:#78716c;--accent:#b45309;--line:#e7e5e4}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+
+.top-bar{display:flex;align-items:center;gap:.75rem;padding:.6rem 1.2rem;border-bottom:1px solid var(--line);background:var(--panel)}
+.back{font-size:.82rem;font-weight:600;color:var(--muted);text-decoration:none}
+.back:hover{color:var(--ink);text-decoration:none}
+.top-bar h1{font-family:'Lora',serif;font-size:1.1rem;font-weight:700}
+
+.container{max-width:800px;margin:0 auto;padding:1.5rem}
+
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--line);margin-bottom:1.5rem}
+.tab{padding:.5rem 1rem;font-size:.82rem;font-weight:600;color:var(--muted);background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;font-family:inherit}
+.tab:hover{color:var(--ink)}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+
+.panel{display:none}.panel.active{display:block}
+
+.search-row{display:flex;gap:.5rem;margin-bottom:1rem}
+.search-row input{flex:1;padding:.5rem .75rem;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:.88rem;outline:none;background:var(--panel)}
+.search-row input:focus{border-color:var(--accent)}
+.search-row button{padding:.5rem 1rem;border:none;border-radius:8px;background:var(--accent);color:#fff;font-size:.85rem;font-weight:600;cursor:pointer;font-family:inherit}
+.search-row button:hover{background:#92400e}
+
+.result-card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:1.2rem;display:none}
+.result-card.visible{display:flex;gap:1.2rem}
+.book-cover{width:130px;flex-shrink:0}
+.book-cover img{width:100%;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,.1)}
+.book-cover .no-cover{width:100%;aspect-ratio:2/3;background:linear-gradient(135deg,#fef3c7,#fde68a);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:2rem}
+.book-info{flex:1}
+.book-info h2{font-family:'Lora',serif;font-size:1.2rem;margin-bottom:.3rem}
+.book-info .author{color:var(--accent);font-weight:600;font-size:.88rem;margin-bottom:.5rem}
+.detail-row{display:flex;gap:.5rem;margin-bottom:.25rem;font-size:.78rem}
+.detail-row .label{color:var(--muted);min-width:80px;font-weight:500}
+.detail-row .value{color:var(--ink)}
+.subjects{display:flex;gap:.3rem;flex-wrap:wrap;margin-top:.5rem}
+.subject-tag{padding:.15rem .4rem;background:rgba(180,83,9,.08);color:var(--accent);border-radius:4px;font-size:.68rem;font-weight:500}
+.export-row{display:flex;gap:.3rem;margin-top:.75rem}
+.exp-btn{padding:.25rem .5rem;border:1px solid var(--line);border-radius:4px;background:var(--panel);cursor:pointer;font-size:.7rem;font-weight:600;font-family:inherit;color:var(--muted)}
+.exp-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+.barcode-area{margin-top:1rem;text-align:center}
+.barcode-area canvas{border:1px solid var(--line);border-radius:6px;background:#fff}
+
+.validator{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:1.2rem;margin-bottom:1rem}
+.validator h3{font-family:'Lora',serif;font-size:.95rem;margin-bottom:.5rem}
+.valid-result{font-size:.85rem;padding:.5rem;border-radius:6px;margin-top:.5rem}
+.valid-result.valid{background:rgba(22,163,74,.08);color:#16a34a}
+.valid-result.invalid{background:rgba(220,38,38,.08);color:#dc2626}
+
+.converter{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:1.2rem;margin-bottom:1rem}
+.converter h3{font-family:'Lora',serif;font-size:.95rem;margin-bottom:.5rem}
+.convert-result{font-size:.85rem;margin-top:.5rem;color:var(--accent);font-weight:600}
+
+.meta-editor{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:1.2rem}
+.meta-editor h3{font-family:'Lora',serif;font-size:.95rem;margin-bottom:.75rem}
+.meta-row{display:grid;grid-template-columns:100px 1fr;gap:.3rem;margin-bottom:.4rem;align-items:center}
+.meta-row label{font-size:.72rem;color:var(--muted);font-weight:600}
+.meta-row input{font-family:inherit;font-size:.78rem;border:1px solid var(--line);border-radius:4px;padding:.25rem .4rem;background:var(--bg);outline:none}
+.meta-row input:focus{border-color:var(--accent)}
+.meta-export{display:flex;gap:.3rem;margin-top:.75rem}
+
+.loading{color:var(--muted);font-size:.85rem;padding:1rem;text-align:center}
+
+footer{text-align:center;padding:1.5rem;font-size:.7rem;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="top-bar">
+<a href="/" class="back">< FreeBookStore</a>
+<h1>ISBN & Book Metadata</h1>
+</div>
+
+<div class="container">
+<div class="tabs">
+<button class="tab active" data-panel="lookup">Lookup</button>
+<button class="tab" data-panel="validate">Validate</button>
+<button class="tab" data-panel="convert">Convert</button>
+<button class="tab" data-panel="editor">Metadata Editor</button>
+</div>
+
+<!-- Lookup -->
+<div class="panel active" id="lookup">
+<div class="search-row">
+<input type="text" id="isbnInput" placeholder="Enter ISBN (10 or 13 digits)..." maxlength="17">
+<button id="lookupBtn">Look Up</button>
+</div>
+<div id="loadingMsg" class="loading" style="display:none">Looking up book...</div>
+<div class="result-card" id="resultCard">
+<div class="book-cover" id="bookCover"></div>
+<div class="book-info" id="bookInfo"></div>
+</div>
+<div class="barcode-area" id="barcodeArea" style="display:none">
+<h3 style="font-family:'Lora',serif;font-size:.9rem;margin-bottom:.5rem">ISBN Barcode</h3>
+<canvas id="barcodeCanvas" width="300" height="80"></canvas>
+</div>
+</div>
+
+<!-- Validate -->
+<div class="panel" id="validate">
+<div class="validator">
+<h3>ISBN Validator</h3>
+<div class="search-row">
+<input type="text" id="validateInput" placeholder="Enter ISBN to validate...">
+<button id="validateBtn">Validate</button>
+</div>
+<div id="validateResult"></div>
+</div>
+</div>
+
+<!-- Convert -->
+<div class="panel" id="convert">
+<div class="converter">
+<h3>ISBN-10 to ISBN-13 Converter</h3>
+<div class="search-row">
+<input type="text" id="convertInput" placeholder="Enter ISBN-10 or ISBN-13...">
+<button id="convertBtn">Convert</button>
+</div>
+<div id="convertResult" class="convert-result"></div>
+</div>
+</div>
+
+<!-- Editor -->
+<div class="panel" id="editor">
+<div class="meta-editor">
+<h3>Book Metadata Editor</h3>
+<div class="meta-row"><label>Title</label><input id="metaTitle" placeholder="Book title"></div>
+<div class="meta-row"><label>Author</label><input id="metaAuthor" placeholder="Author name"></div>
+<div class="meta-row"><label>ISBN-13</label><input id="metaIsbn13" placeholder="978-..."></div>
+<div class="meta-row"><label>Publisher</label><input id="metaPublisher" placeholder="Publisher"></div>
+<div class="meta-row"><label>Year</label><input id="metaYear" placeholder="2024" type="number"></div>
+<div class="meta-row"><label>Pages</label><input id="metaPages" placeholder="300" type="number"></div>
+<div class="meta-row"><label>Language</label><input id="metaLang" value="English"></div>
+<div class="meta-row"><label>Subjects</label><input id="metaSubjects" placeholder="Fiction, Adventure"></div>
+<div class="meta-export">
+<button class="exp-btn" data-fmt="json">Export JSON</button>
+<button class="exp-btn" data-fmt="bibtex">Export BibTeX</button>
+<button class="exp-btn" data-fmt="cite">Copy Citation</button>
+</div>
+</div>
+</div>
+</div>
+
+<footer>FreeBookStore &mdash; ISBN data from <a href="https://openlibrary.org" target="_blank">Open Library</a></footer>
+<script src="/related.js"></script>
+<script>
+(function(){
+// Tabs
+document.querySelectorAll('.tab').forEach(function(tab){
+  tab.addEventListener('click',function(){
+    document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active')});
+    document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active')});
+    tab.classList.add('active');
+    document.getElementById(tab.dataset.panel).classList.add('active');
+  });
+});
+
+function cleanIsbn(s){return s.replace(/[\s-]/g,'')}
+
+function validateIsbn10(isbn){
+  if(isbn.length!==10) return false;
+  var sum=0;
+  for(var i=0;i<9;i++){if(!/\d/.test(isbn[i])) return false;sum+=(10-i)*parseInt(isbn[i])}
+  var last=isbn[9]==='X'?10:parseInt(isbn[9]);
+  if(isNaN(last)) return false;
+  sum+=last;
+  return sum%11===0;
+}
+
+function validateIsbn13(isbn){
+  if(isbn.length!==13||!/^\d{13}$/.test(isbn)) return false;
+  var sum=0;
+  for(var i=0;i<12;i++) sum+=parseInt(isbn[i])*(i%2===0?1:3);
+  var check=(10-(sum%10))%10;
+  return check===parseInt(isbn[12]);
+}
+
+function isbn10to13(isbn10){
+  var base='978'+isbn10.substring(0,9);
+  var sum=0;
+  for(var i=0;i<12;i++) sum+=parseInt(base[i])*(i%2===0?1:3);
+  var check=(10-(sum%10))%10;
+  return base+check;
+}
+
+function isbn13to10(isbn13){
+  if(!isbn13.startsWith('978')) return null;
+  var base=isbn13.substring(3,12);
+  var sum=0;
+  for(var i=0;i<9;i++) sum+=(10-i)*parseInt(base[i]);
+  var check=(11-(sum%11))%11;
+  return base+(check===10?'X':check);
+}
+
+// Lookup
+document.getElementById('lookupBtn').addEventListener('click',lookupIsbn);
+document.getElementById('isbnInput').addEventListener('keydown',function(e){if(e.key==='Enter') lookupIsbn()});
+
+async function lookupIsbn(){
+  var isbn=cleanIsbn(document.getElementById('isbnInput').value);
+  if(!isbn){alert('Please enter an ISBN.');return}
+  document.getElementById('loadingMsg').style.display='block';
+  document.getElementById('resultCard').classList.remove('visible');
+  document.getElementById('barcodeArea').style.display='none';
+  try{
+    var res=await fetch('https://openlibrary.org/isbn/'+isbn+'.json');
+    if(!res.ok) throw new Error('Not found');
+    var data=await res.json();
+
+    // Get author info
+    var authorName='Unknown';
+    if(data.authors&&data.authors[0]){
+      try{
+        var aRes=await fetch('https://openlibrary.org'+data.authors[0].key+'.json');
+        var aData=await aRes.json();
+        authorName=aData.name||'Unknown';
+      }catch(e){}
+    }
+
+    var cover=document.getElementById('bookCover');
+    if(data.covers&&data.covers[0]){
+      cover.innerHTML='<img src="https://covers.openlibrary.org/b/id/'+data.covers[0]+'-L.jpg" alt="Cover">';
+    } else {
+      cover.innerHTML='<div class="no-cover">📖</div>';
+    }
+
+    var info=document.getElementById('bookInfo');
+    var subjects=(data.subjects||[]).slice(0,8);
+    info.innerHTML='<h2>'+(data.title||'Unknown Title')+'</h2>'+
+      '<div class="author">'+authorName+'</div>'+
+      '<div class="detail-row"><span class="label">ISBN</span><span class="value">'+isbn+'</span></div>'+
+      (data.publishers?'<div class="detail-row"><span class="label">Publisher</span><span class="value">'+data.publishers.join(', ')+'</span></div>':'')+
+      (data.publish_date?'<div class="detail-row"><span class="label">Published</span><span class="value">'+data.publish_date+'</span></div>':'')+
+      (data.number_of_pages?'<div class="detail-row"><span class="label">Pages</span><span class="value">'+data.number_of_pages+'</span></div>':'')+
+      (subjects.length?'<div class="subjects">'+subjects.map(function(s){return'<span class="subject-tag">'+s+'</span>'}).join('')+'</div>':'')+
+      '<div class="export-row">'+
+      '<button class="exp-btn" onclick="exportLookup(\'json\')">JSON</button>'+
+      '<button class="exp-btn" onclick="exportLookup(\'bibtex\')">BibTeX</button>'+
+      '<button class="exp-btn" onclick="exportLookup(\'cite\')">Citation</button></div>';
+
+    window._lookupData={title:data.title,author:authorName,isbn:isbn,publisher:(data.publishers||[])[0]||'',year:data.publish_date||'',pages:data.number_of_pages||''};
+
+    document.getElementById('resultCard').classList.add('visible');
+    drawBarcode(isbn.length===13?isbn:isbn10to13(isbn));
+    document.getElementById('barcodeArea').style.display='block';
+  }catch(e){
+    document.getElementById('bookInfo').innerHTML='<p style="color:#dc2626">Book not found. Check the ISBN and try again.</p>';
+    document.getElementById('resultCard').classList.add('visible');
+    document.getElementById('bookCover').innerHTML='<div class="no-cover">?</div>';
+  }
+  document.getElementById('loadingMsg').style.display='none';
+}
+
+window.exportLookup=function(fmt){
+  var d=window._lookupData;if(!d) return;
+  if(fmt==='json'){
+    var blob=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});
+    var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='book-metadata.json';a.click();
+  } else if(fmt==='bibtex'){
+    var bib='@book{'+d.isbn+',\n  title = {'+d.title+'},\n  author = {'+d.author+'},\n  year = {'+d.year+'},\n  publisher = {'+d.publisher+'},\n  isbn = {'+d.isbn+'}\n}';
+    navigator.clipboard.writeText(bib);alert('BibTeX copied to clipboard.');
+  } else if(fmt==='cite'){
+    var cite=d.author+'. '+d.title+'. '+d.publisher+', '+d.year+'.';
+    navigator.clipboard.writeText(cite);alert('Citation copied to clipboard.');
+  }
+};
+
+// Validate
+document.getElementById('validateBtn').addEventListener('click',function(){
+  var isbn=cleanIsbn(document.getElementById('validateInput').value);
+  var result=document.getElementById('validateResult');
+  if(isbn.length===10){
+    var valid=validateIsbn10(isbn);
+    result.innerHTML='<div class="valid-result '+(valid?'valid':'invalid')+'">ISBN-10: '+(valid?'Valid':'Invalid — check digit mismatch')+'</div>';
+  } else if(isbn.length===13){
+    var valid=validateIsbn13(isbn);
+    result.innerHTML='<div class="valid-result '+(valid?'valid':'invalid')+'">ISBN-13: '+(valid?'Valid':'Invalid — check digit mismatch')+'</div>';
+  } else {
+    result.innerHTML='<div class="valid-result invalid">ISBN must be 10 or 13 digits</div>';
+  }
+});
+
+// Convert
+document.getElementById('convertBtn').addEventListener('click',function(){
+  var isbn=cleanIsbn(document.getElementById('convertInput').value);
+  var result=document.getElementById('convertResult');
+  if(isbn.length===10){
+    result.textContent='ISBN-13: '+isbn10to13(isbn);
+  } else if(isbn.length===13){
+    var r=isbn13to10(isbn);
+    result.textContent=r?'ISBN-10: '+r:'Cannot convert (only 978-prefix ISBNs can convert to ISBN-10)';
+  } else {
+    result.textContent='Enter a valid ISBN-10 or ISBN-13';
+  }
+});
+
+// Barcode drawing (simplified EAN-13 visualization)
+function drawBarcode(isbn13){
+  var canvas=document.getElementById('barcodeCanvas');
+  var ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,300,80);
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,300,80);
+
+  // Simple barcode-like visualization (not a real EAN-13 encoder, but representative)
+  var x=30;var barW=2;
+  ctx.fillStyle='#000';
+  // Start guard
+  ctx.fillRect(x,5,barW,55);x+=barW*2;ctx.fillRect(x,5,barW,55);x+=barW*2;
+  // Data bars
+  for(var i=0;i<12;i++){
+    var d=parseInt(isbn13[i+1])||0;
+    for(var b=0;b<7;b++){
+      if((d+b)%2===0){ctx.fillRect(x,5,barW,50)}
+      x+=barW;
+    }
+    if(i===5){ctx.fillRect(x,5,barW,55);x+=barW*2;ctx.fillRect(x,5,barW,55);x+=barW*2}
+  }
+  // End guard
+  ctx.fillRect(x,5,barW,55);x+=barW*2;ctx.fillRect(x,5,barW,55);
+
+  ctx.fillStyle='#000';ctx.font='11px monospace';ctx.textAlign='center';
+  ctx.fillText(isbn13,150,75);
+}
+
+// Metadata editor export
+document.querySelectorAll('.meta-export .exp-btn').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    var d={title:document.getElementById('metaTitle').value,author:document.getElementById('metaAuthor').value,isbn:document.getElementById('metaIsbn13').value,publisher:document.getElementById('metaPublisher').value,year:document.getElementById('metaYear').value,pages:document.getElementById('metaPages').value,language:document.getElementById('metaLang').value,subjects:document.getElementById('metaSubjects').value};
+    var fmt=this.dataset.fmt;
+    if(fmt==='json'){
+      var blob=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});
+      var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='metadata.json';a.click();
+    } else if(fmt==='bibtex'){
+      var bib='@book{key,\n  title = {'+d.title+'},\n  author = {'+d.author+'},\n  year = {'+d.year+'},\n  publisher = {'+d.publisher+'},\n  isbn = {'+d.isbn+'}\n}';
+      navigator.clipboard.writeText(bib).then(function(){alert('BibTeX copied!')});
+    } else if(fmt==='cite'){
+      var cite=d.author+'. '+d.title+'. '+d.publisher+', '+d.year+'.';
+      navigator.clipboard.writeText(cite).then(function(){alert('Citation copied!')});
+    }
+  });
+});
+})();
+</script>
+</body>
+</html>

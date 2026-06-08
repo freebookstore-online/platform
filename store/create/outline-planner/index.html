@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Book Outline Planner — FreeBookStore</title>
+<meta name="description" content="Plan your book with a three-act structure, drag-and-drop scenes, character tracker, and timeline view.">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#faf9f7;--panel:#fff;--ink:#1c1917;--muted:#78716c;--accent:#b45309;--line:#e7e5e4}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+
+.top-bar{display:flex;align-items:center;gap:.75rem;padding:.6rem 1.2rem;border-bottom:1px solid var(--line);background:var(--panel);flex-wrap:wrap}
+.back{font-size:.82rem;font-weight:600;color:var(--muted);text-decoration:none}
+.back:hover{color:var(--ink);text-decoration:none}
+.top-bar h1{font-family:'Lora',serif;font-size:1.1rem;font-weight:700}
+.top-actions{margin-left:auto;display:flex;gap:.3rem}
+.btn{padding:.3rem .6rem;border:1px solid var(--line);border-radius:6px;background:var(--panel);cursor:pointer;font-size:.72rem;font-weight:600;font-family:inherit;color:var(--muted);transition:all .15s}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.accent{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+.template-bar{max-width:1200px;margin:0 auto;padding:.75rem 1.2rem;display:flex;gap:.3rem;flex-wrap:wrap;align-items:center}
+.template-bar label{font-size:.72rem;color:var(--muted);font-weight:600}
+.tmpl-btn{padding:.25rem .6rem;border:1px solid var(--line);border-radius:4px;background:var(--panel);cursor:pointer;font-size:.7rem;font-family:inherit;color:var(--muted)}
+.tmpl-btn:hover{border-color:var(--accent)}
+.tmpl-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.view-toggle{margin-left:auto;display:flex;gap:0;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.vt-btn{padding:.25rem .5rem;font-size:.7rem;font-weight:600;background:var(--panel);border:none;cursor:pointer;color:var(--muted);font-family:inherit}
+.vt-btn.active{background:var(--accent);color:#fff}
+
+.acts-container{max-width:1200px;margin:0 auto;padding:0 1.2rem 2rem}
+
+/* List view */
+.act{margin-bottom:1.5rem}
+.act-header{display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem;padding:.3rem 0;border-bottom:2px solid var(--accent)}
+.act-header h2{font-family:'Lora',serif;font-size:1rem;font-weight:700;color:var(--accent)}
+.act-header .act-stats{font-size:.68rem;color:var(--muted);margin-left:auto}
+.add-scene-btn{padding:.2rem .5rem;border:1px dashed var(--line);border-radius:6px;background:none;cursor:pointer;font-size:.72rem;font-family:inherit;color:var(--muted);width:100%;margin-top:.3rem;transition:border-color .15s}
+.add-scene-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+.scene-card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:.75rem;margin-bottom:.4rem;cursor:grab;transition:border-color .15s,box-shadow .15s}
+.scene-card:hover{border-color:var(--accent)}
+.scene-card.dragging{opacity:.5;box-shadow:0 4px 12px rgba(0,0,0,.1)}
+.scene-card.drag-over{border-color:var(--accent);border-style:dashed}
+.scene-top{display:flex;align-items:center;gap:.3rem;margin-bottom:.3rem}
+.scene-color{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.scene-title-input{flex:1;border:none;font-family:var(--font-display,'Lora',serif);font-size:.88rem;font-weight:700;background:none;outline:none;color:var(--ink)}
+.scene-del{background:none;border:none;cursor:pointer;color:var(--muted);font-size:.85rem;padding:0 .2rem}
+.scene-del:hover{color:#dc2626}
+.scene-field{margin-bottom:.25rem}
+.scene-field label{display:block;font-size:.62rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.3px;margin-bottom:.1rem}
+.scene-field textarea,.scene-field input{width:100%;border:1px solid var(--line);border-radius:4px;padding:.2rem .4rem;font-family:inherit;font-size:.75rem;background:var(--bg);outline:none;resize:vertical}
+.scene-field textarea{height:40px}
+.scene-field textarea:focus,.scene-field input:focus{border-color:var(--accent)}
+.scene-row{display:grid;grid-template-columns:1fr 1fr;gap:.4rem}
+
+/* Timeline view */
+.timeline{display:flex;gap:.5rem;overflow-x:auto;padding:1rem 0;min-height:300px}
+.timeline .act{flex:1;min-width:300px}
+.timeline .act-header{border-bottom:2px solid var(--accent)}
+
+/* Character tracker */
+.char-tracker{max-width:1200px;margin:0 auto;padding:0 1.2rem 1rem}
+.char-tracker h3{font-family:'Lora',serif;font-size:.9rem;margin-bottom:.5rem;color:var(--accent)}
+.char-table{width:100%;border-collapse:collapse;font-size:.72rem}
+.char-table th,.char-table td{padding:.3rem .5rem;border:1px solid var(--line);text-align:left}
+.char-table th{background:var(--bg);font-weight:600;color:var(--muted);position:sticky;top:0}
+.char-table td{background:var(--panel)}
+.char-check{color:var(--accent);font-weight:700}
+
+footer{text-align:center;padding:1rem;font-size:.7rem;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="top-bar">
+<a href="/" class="back">< FreeBookStore</a>
+<h1>Book Outline Planner</h1>
+<div class="top-actions">
+<button class="btn" id="exportMd">Export MD</button>
+<button class="btn" id="exportJson">Export JSON</button>
+<button class="btn accent" id="exportHtml">Print HTML</button>
+</div>
+</div>
+
+<div class="template-bar">
+<label>Template:</label>
+<button class="tmpl-btn active" data-tmpl="novel">Novel (3 Acts)</button>
+<button class="tmpl-btn" data-tmpl="short">Short Story</button>
+<button class="tmpl-btn" data-tmpl="screenplay">Screenplay</button>
+<button class="tmpl-btn" data-tmpl="nonfiction">Non-Fiction</button>
+<div class="view-toggle">
+<button class="vt-btn active" data-view="list">List</button>
+<button class="vt-btn" data-view="timeline">Timeline</button>
+</div>
+</div>
+
+<div id="charTracker" class="char-tracker" style="display:none">
+<h3>Character Tracker</h3>
+<div id="charTableWrap" style="overflow-x:auto"></div>
+</div>
+<button class="btn" id="toggleCharTracker" style="margin:0 auto;display:block;margin-bottom:.5rem">Show Character Tracker</button>
+
+<div class="acts-container" id="actsContainer"></div>
+
+<footer>FreeBookStore</footer>
+<script src="/related.js"></script>
+<script>
+(function(){
+var TEMPLATES={
+  novel:{acts:['Act I: Setup','Act II: Confrontation','Act III: Resolution']},
+  short:{acts:['Opening','Middle','Climax & Resolution']},
+  screenplay:{acts:['Act I: Setup (p.1-30)','Act II: Confrontation (p.31-90)','Act III: Resolution (p.91-120)']},
+  nonfiction:{acts:['Introduction','Body','Conclusion']}
+};
+var COLORS=['#b45309','#0369a1','#7c3aed','#15803d','#dc2626','#be185d','#0891b2','#854d0e'];
+
+var outline=JSON.parse(localStorage.getItem('fbook-outline')||'null');
+var currentView='list';
+var currentTmpl='novel';
+
+function defaultOutline(tmpl){
+  var acts=TEMPLATES[tmpl].acts.map(function(name){return{name:name,scenes:[]}});
+  return{template:tmpl,acts:acts,characters:[]};
+}
+
+if(!outline) outline=defaultOutline('novel');
+currentTmpl=outline.template||'novel';
+
+function save(){localStorage.setItem('fbook-outline',JSON.stringify(outline))}
+
+function allScenes(){var s=[];outline.acts.forEach(function(a){s=s.concat(a.scenes)});return s}
+
+function allCharacters(){
+  var chars=new Set();
+  allScenes().forEach(function(sc){(sc.characters||'').split(',').forEach(function(c){c=c.trim();if(c) chars.add(c)})});
+  return Array.from(chars).sort();
+}
+
+function render(){
+  var container=document.getElementById('actsContainer');
+  container.innerHTML='';
+  container.className=currentView==='timeline'?'acts-container timeline':'acts-container';
+
+  outline.acts.forEach(function(act,ai){
+    var actDiv=document.createElement('div');actDiv.className='act';
+    var sceneCount=act.scenes.length;
+    var wordTarget=act.scenes.reduce(function(s,sc){return s+(parseInt(sc.wordTarget)||0)},0);
+    actDiv.innerHTML='<div class="act-header"><h2>'+act.name+'</h2><span class="act-stats">'+sceneCount+' scenes'+
+      (wordTarget?' | Target: '+wordTarget+' words':'')+'</span></div>';
+
+    act.scenes.forEach(function(scene,si){
+      var card=document.createElement('div');
+      card.className='scene-card';
+      card.draggable=true;card.dataset.act=ai;card.dataset.scene=si;
+      var color=COLORS[si%COLORS.length];
+      if(scene.povColor) color=scene.povColor;
+
+      card.innerHTML='<div class="scene-top"><div class="scene-color" style="background:'+color+'"></div>'+
+        '<input class="scene-title-input" value="'+(scene.title||'')+'" placeholder="Scene title" data-field="title">'+
+        '<button class="scene-del" title="Delete">&times;</button></div>'+
+        '<div class="scene-field"><label>Summary</label><textarea data-field="summary" placeholder="What happens...">'+(scene.summary||'')+'</textarea></div>'+
+        '<div class="scene-row">'+
+        '<div class="scene-field"><label>Characters</label><input data-field="characters" value="'+(scene.characters||'')+'" placeholder="Alice, Bob"></div>'+
+        '<div class="scene-field"><label>Setting</label><input data-field="setting" value="'+(scene.setting||'')+'" placeholder="Where/when"></div>'+
+        '</div>'+
+        '<div class="scene-row">'+
+        '<div class="scene-field"><label>Conflict</label><textarea data-field="conflict" placeholder="Central tension">'+(scene.conflict||'')+'</textarea></div>'+
+        '<div class="scene-field"><label>Resolution</label><textarea data-field="resolution" placeholder="How it resolves">'+(scene.resolution||'')+'</textarea></div>'+
+        '</div>'+
+        '<div class="scene-field"><label>Word Target</label><input type="number" data-field="wordTarget" value="'+(scene.wordTarget||'')+'" placeholder="e.g. 2000"></div>';
+
+      // Events
+      card.querySelectorAll('input,textarea').forEach(function(inp){
+        inp.addEventListener('input',function(){
+          scene[this.dataset.field]=this.value;save();
+          if(this.dataset.field==='characters') renderCharTracker();
+        });
+      });
+      card.querySelector('.scene-del').addEventListener('click',function(){
+        if(confirm('Delete this scene?')){act.scenes.splice(si,1);save();render()}
+      });
+
+      // Drag
+      card.addEventListener('dragstart',function(e){
+        card.classList.add('dragging');
+        e.dataTransfer.setData('text/plain',ai+','+si);
+        e.dataTransfer.effectAllowed='move';
+      });
+      card.addEventListener('dragend',function(){card.classList.remove('dragging')});
+      card.addEventListener('dragover',function(e){e.preventDefault();card.classList.add('drag-over')});
+      card.addEventListener('dragleave',function(){card.classList.remove('drag-over')});
+      card.addEventListener('drop',function(e){
+        e.preventDefault();card.classList.remove('drag-over');
+        var data=e.dataTransfer.getData('text/plain').split(',');
+        var fromAct=parseInt(data[0]),fromScene=parseInt(data[1]);
+        var moved=outline.acts[fromAct].scenes.splice(fromScene,1)[0];
+        act.scenes.splice(si,0,moved);
+        save();render();
+      });
+
+      actDiv.appendChild(card);
+    });
+
+    var addBtn=document.createElement('button');
+    addBtn.className='add-scene-btn';addBtn.textContent='+ Add Scene';
+    addBtn.addEventListener('click',function(){
+      act.scenes.push({title:'New Scene',summary:'',characters:'',setting:'',conflict:'',resolution:'',wordTarget:''});
+      save();render();
+    });
+    actDiv.appendChild(addBtn);
+    container.appendChild(actDiv);
+  });
+  renderCharTracker();
+}
+
+function renderCharTracker(){
+  var chars=allCharacters();
+  if(chars.length===0){document.getElementById('charTableWrap').innerHTML='<p style="font-size:.75rem;color:var(--muted)">Add characters to scenes to see the tracker.</p>';return}
+  var scenes=allScenes();
+  var html='<table class="char-table"><tr><th>Character</th>';
+  scenes.forEach(function(sc,i){html+='<th title="'+(sc.title||'Scene '+(i+1))+'">'+(i+1)+'</th>'});
+  html+='</tr>';
+  chars.forEach(function(ch){
+    html+='<tr><td>'+ch+'</td>';
+    scenes.forEach(function(sc){
+      var found=(sc.characters||'').toLowerCase().includes(ch.toLowerCase());
+      html+='<td>'+(found?'<span class="char-check">&#10003;</span>':'')+'</td>';
+    });
+    html+='</tr>';
+  });
+  html+='</table>';
+  document.getElementById('charTableWrap').innerHTML=html;
+}
+
+document.getElementById('toggleCharTracker').addEventListener('click',function(){
+  var ct=document.getElementById('charTracker');
+  var visible=ct.style.display!=='none';
+  ct.style.display=visible?'none':'block';
+  this.textContent=visible?'Show Character Tracker':'Hide Character Tracker';
+});
+
+// Templates
+document.querySelectorAll('.tmpl-btn').forEach(function(btn){
+  if(btn.dataset.tmpl===currentTmpl) btn.classList.add('active');
+  btn.addEventListener('click',function(){
+    if(!confirm('Switch template? This will reset the outline.')) return;
+    document.querySelectorAll('.tmpl-btn').forEach(function(b){b.classList.remove('active')});
+    btn.classList.add('active');
+    currentTmpl=btn.dataset.tmpl;
+    outline=defaultOutline(currentTmpl);save();render();
+  });
+});
+
+// View toggle
+document.querySelectorAll('.vt-btn').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    document.querySelectorAll('.vt-btn').forEach(function(b){b.classList.remove('active')});
+    btn.classList.add('active');
+    currentView=btn.dataset.view;render();
+  });
+});
+
+// Export
+function exportMd(){
+  var md='# Book Outline\n\n';
+  outline.acts.forEach(function(act){
+    md+='## '+act.name+'\n\n';
+    act.scenes.forEach(function(sc,i){
+      md+='### '+(sc.title||'Scene '+(i+1))+'\n\n';
+      if(sc.summary) md+='**Summary:** '+sc.summary+'\n\n';
+      if(sc.characters) md+='**Characters:** '+sc.characters+'\n\n';
+      if(sc.setting) md+='**Setting:** '+sc.setting+'\n\n';
+      if(sc.conflict) md+='**Conflict:** '+sc.conflict+'\n\n';
+      if(sc.resolution) md+='**Resolution:** '+sc.resolution+'\n\n';
+    });
+  });
+  download('outline.md',md,'text/markdown');
+}
+function exportJson(){download('outline.json',JSON.stringify(outline,null,2),'application/json')}
+function exportHtml(){
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Book Outline</title><style>body{font-family:Georgia,serif;max-width:800px;margin:2rem auto;padding:0 1.5rem;color:#1c1917}h1{color:#b45309}h2{border-bottom:2px solid #b45309;padding-bottom:.3rem;margin-top:2rem}h3{color:#92400e}.field{margin:.3rem 0;font-size:.9rem}.label{font-weight:bold;color:#78716c}.scene{border:1px solid #e7e5e4;border-radius:8px;padding:1rem;margin:.5rem 0;background:#fff}@media print{body{max-width:none}}</style></head><body>';
+  html+='<h1>Book Outline</h1>';
+  outline.acts.forEach(function(act){
+    html+='<h2>'+act.name+'</h2>';
+    act.scenes.forEach(function(sc,i){
+      html+='<div class="scene"><h3>'+(sc.title||'Scene '+(i+1))+'</h3>';
+      ['summary','characters','setting','conflict','resolution'].forEach(function(f){
+        if(sc[f]) html+='<p class="field"><span class="label">'+f.charAt(0).toUpperCase()+f.slice(1)+':</span> '+sc[f]+'</p>';
+      });
+      html+='</div>';
+    });
+  });
+  html+='</body></html>';
+  var w=window.open('','_blank');w.document.write(html);w.document.close();
+}
+
+function download(name,content,type){
+  var blob=new Blob([content],{type:type});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+}
+
+document.getElementById('exportMd').addEventListener('click',exportMd);
+document.getElementById('exportJson').addEventListener('click',exportJson);
+document.getElementById('exportHtml').addEventListener('click',exportHtml);
+
+render();
+})();
+</script>
+</body>
+</html>

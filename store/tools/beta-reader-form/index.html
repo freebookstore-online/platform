@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Beta Reader Feedback — FreeBookStore</title>
+<meta name="description" content="Create feedback forms for beta readers. Collect and summarize responses.">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#faf9f7;--panel:#fff;--ink:#1c1917;--muted:#78716c;--accent:#b45309;--line:#e7e5e4}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+
+.top-bar{display:flex;align-items:center;gap:.75rem;padding:.6rem 1.2rem;border-bottom:1px solid var(--line);background:var(--panel);flex-wrap:wrap}
+.back{font-size:.82rem;font-weight:600;color:var(--muted);text-decoration:none}
+.back:hover{color:var(--ink);text-decoration:none}
+.top-bar h1{font-family:'Lora',serif;font-size:1.1rem;font-weight:700}
+
+.container{max-width:800px;margin:0 auto;padding:1.5rem}
+
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--line);margin-bottom:1.5rem}
+.tab{padding:.5rem 1rem;font-size:.82rem;font-weight:600;color:var(--muted);background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;font-family:inherit}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+
+.panel{display:none}.panel.active{display:block}
+
+.form-section{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:1.2rem;margin-bottom:1rem}
+.form-section h3{font-family:'Lora',serif;font-size:.95rem;margin-bottom:.75rem}
+.field{margin-bottom:.75rem}
+.field label{display:block;font-size:.72rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.3px;margin-bottom:.2rem}
+.field input,.field textarea,.field select{width:100%;font-family:inherit;font-size:.82rem;border:1px solid var(--line);border-radius:6px;padding:.4rem .6rem;background:var(--bg);outline:none}
+.field input:focus,.field textarea:focus{border-color:var(--accent)}
+.field textarea{height:70px;resize:vertical}
+.chars-row{display:flex;gap:.3rem;flex-wrap:wrap}
+.chars-row input{flex:1;min-width:120px}
+.add-btn{padding:.2rem .5rem;border:1px dashed var(--line);border-radius:4px;background:none;cursor:pointer;font-size:.7rem;font-family:inherit;color:var(--muted)}
+.add-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+.stars-input{display:flex;gap:.2rem}
+.star{font-size:1.5rem;cursor:pointer;color:var(--line);transition:color .1s}
+.star.filled{color:var(--accent)}
+
+.pacing-options{display:flex;gap:.5rem}
+.pacing-btn{padding:.3rem .8rem;border:1px solid var(--line);border-radius:6px;background:var(--panel);cursor:pointer;font-size:.78rem;font-family:inherit;color:var(--muted);transition:all .15s}
+.pacing-btn:hover{border-color:var(--accent)}
+.pacing-btn.selected{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+.recommend-options{display:flex;gap:.5rem}
+.rec-btn{padding:.3rem .8rem;border:1px solid var(--line);border-radius:6px;background:var(--panel);cursor:pointer;font-size:.78rem;font-family:inherit;color:var(--muted)}
+.rec-btn:hover{border-color:var(--accent)}
+.rec-btn.selected{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+.btn{padding:.5rem 1rem;border:none;border-radius:8px;background:var(--accent);color:#fff;font-size:.85rem;font-weight:600;cursor:pointer;font-family:inherit}
+.btn:hover{background:#92400e}
+.btn-secondary{background:var(--panel);color:var(--muted);border:1px solid var(--line)}
+.btn-secondary:hover{border-color:var(--accent);color:var(--accent);background:var(--panel)}
+
+.responses-list{margin-top:1rem}
+.response-card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:.75rem;margin-bottom:.5rem}
+.response-card .r-header{display:flex;justify-content:space-between;margin-bottom:.3rem;font-size:.72rem;color:var(--muted)}
+.response-card .r-stars{color:var(--accent);font-size:.9rem}
+.response-card .r-field{margin-bottom:.3rem;font-size:.78rem}
+.response-card .r-field .r-label{font-weight:600;color:var(--muted);font-size:.68rem;text-transform:uppercase}
+
+.summary-card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:1.2rem;margin-top:1rem}
+.summary-card h3{font-family:'Lora',serif;font-size:.95rem;margin-bottom:.5rem}
+.summary-stat{display:flex;align-items:center;gap:.5rem;margin-bottom:.3rem;font-size:.82rem}
+.summary-stat .bar{flex:1;height:6px;background:var(--line);border-radius:3px;overflow:hidden}
+.summary-stat .bar-fill{height:100%;background:var(--accent)}
+
+footer{text-align:center;padding:1.5rem;font-size:.7rem;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="top-bar">
+<a href="/" class="back">< FreeBookStore</a>
+<h1>Beta Reader Feedback</h1>
+</div>
+
+<div class="container">
+<div class="tabs">
+<button class="tab active" data-panel="setup">Setup Form</button>
+<button class="tab" data-panel="fill">Fill Form</button>
+<button class="tab" data-panel="responses">Responses <span id="respCount"></span></button>
+</div>
+
+<!-- Setup -->
+<div class="panel active" id="setup">
+<div class="form-section">
+<h3>Book Details</h3>
+<div class="field"><label>Book Title</label><input id="bookTitle" placeholder="Your book title"></div>
+<div class="field"><label>Author</label><input id="bookAuthor" placeholder="Your name"></div>
+<div class="field"><label>Genre</label><input id="bookGenre" placeholder="e.g., Fantasy, Mystery"></div>
+</div>
+<div class="form-section">
+<h3>Characters to Rate</h3>
+<div id="charsList" class="chars-row"></div>
+<div style="margin-top:.3rem;display:flex;gap:.3rem">
+<input id="newCharInput" placeholder="Character name" style="flex:1;font-family:inherit;font-size:.78rem;border:1px solid var(--line);border-radius:4px;padding:.25rem .4rem">
+<button class="add-btn" id="addCharBtn">+ Add</button>
+</div>
+</div>
+<div class="form-section">
+<h3>Actions</h3>
+<div style="display:flex;gap:.5rem;flex-wrap:wrap">
+<button class="btn" id="generateFormBtn">Generate Shareable Form</button>
+<button class="btn btn-secondary" id="saveSetupBtn">Save Setup</button>
+</div>
+</div>
+</div>
+
+<!-- Fill Form -->
+<div class="panel" id="fill">
+<div class="form-section">
+<h3>Beta Reader Feedback Form</h3>
+<p style="font-size:.78rem;color:var(--muted);margin-bottom:1rem" id="formBookInfo"></p>
+
+<div class="field"><label>Your Name (Optional)</label><input id="readerName" placeholder="Anonymous"></div>
+
+<div class="field"><label>Overall Impression</label>
+<div class="stars-input" id="overallStars"></div></div>
+
+<div class="field"><label>Pacing</label>
+<div class="pacing-options" id="pacingOptions">
+<button class="pacing-btn" data-val="too-slow">Too Slow</button>
+<button class="pacing-btn" data-val="just-right">Just Right</button>
+<button class="pacing-btn" data-val="too-fast">Too Fast</button>
+</div></div>
+
+<div id="characterRatings"></div>
+
+<div class="field"><label>Favorite Scene</label><textarea id="favScene" placeholder="What was your favorite part?"></textarea></div>
+<div class="field"><label>Least Favorite Scene</label><textarea id="leastFavScene" placeholder="What didn't work for you?"></textarea></div>
+<div class="field"><label>Confusing Parts</label><textarea id="confusing" placeholder="Anything that was unclear or confusing?"></textarea></div>
+<div class="field"><label>Suggestions</label><textarea id="suggestions" placeholder="Any suggestions for improvement?"></textarea></div>
+
+<div class="field"><label>Would You Recommend?</label>
+<div class="recommend-options" id="recOptions">
+<button class="rec-btn" data-val="yes">Yes</button>
+<button class="rec-btn" data-val="maybe">Maybe</button>
+<button class="rec-btn" data-val="no">No</button>
+</div></div>
+
+<button class="btn" id="submitBtn" style="margin-top:1rem">Submit Feedback</button>
+</div>
+</div>
+
+<!-- Responses -->
+<div class="panel" id="responses">
+<div class="summary-card" id="summaryCard"></div>
+<div class="responses-list" id="responsesList"></div>
+</div>
+</div>
+
+<footer>FreeBookStore</footer>
+<script src="/related.js"></script>
+<script>
+(function(){
+var setup=JSON.parse(localStorage.getItem('fbook-beta-setup')||'null')||{title:'',author:'',genre:'',characters:[]};
+var responses=JSON.parse(localStorage.getItem('fbook-beta-responses')||'[]');
+var currentStars=0;
+var currentPacing='';
+var currentRec='';
+var charRatings={};
+
+// Tabs
+document.querySelectorAll('.tab').forEach(function(tab){
+  tab.addEventListener('click',function(){
+    document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active')});
+    document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active')});
+    tab.classList.add('active');
+    document.getElementById(tab.dataset.panel).classList.add('active');
+    if(tab.dataset.panel==='fill') renderForm();
+    if(tab.dataset.panel==='responses') renderResponses();
+  });
+});
+
+function saveSetup(){localStorage.setItem('fbook-beta-setup',JSON.stringify(setup))}
+function saveResponses(){localStorage.setItem('fbook-beta-responses',JSON.stringify(responses))}
+function updateCount(){document.getElementById('respCount').textContent=responses.length>0?'('+responses.length+')':''}
+
+// Setup
+document.getElementById('bookTitle').value=setup.title;
+document.getElementById('bookAuthor').value=setup.author;
+document.getElementById('bookGenre').value=setup.genre;
+
+['bookTitle','bookAuthor','bookGenre'].forEach(function(id){
+  document.getElementById(id).addEventListener('input',function(){
+    var key=id.replace('book','').toLowerCase();
+    setup[key]=this.value;
+  });
+});
+
+function renderChars(){
+  var list=document.getElementById('charsList');
+  list.innerHTML='';
+  setup.characters.forEach(function(c,i){
+    var span=document.createElement('span');
+    span.style.cssText='display:inline-flex;align-items:center;gap:.2rem;padding:.2rem .5rem;background:rgba(180,83,9,.08);color:var(--accent);border-radius:4px;font-size:.75rem;font-weight:500';
+    span.textContent=c;
+    var del=document.createElement('button');del.textContent='x';del.style.cssText='background:none;border:none;cursor:pointer;color:var(--muted);font-size:.7rem';
+    del.addEventListener('click',function(){setup.characters.splice(i,1);renderChars()});
+    span.appendChild(del);
+    list.appendChild(span);
+  });
+}
+renderChars();
+
+document.getElementById('addCharBtn').addEventListener('click',function(){
+  var input=document.getElementById('newCharInput');
+  if(input.value.trim()){setup.characters.push(input.value.trim());input.value='';renderChars()}
+});
+
+document.getElementById('saveSetupBtn').addEventListener('click',function(){saveSetup();alert('Setup saved!')});
+
+// Generate shareable form
+document.getElementById('generateFormBtn').addEventListener('click',function(){
+  saveSetup();
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Beta Reader Feedback — '+setup.title+'</title>';
+  html+='<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:system-ui,sans-serif;max-width:600px;margin:2rem auto;padding:0 1.5rem;color:#1c1917;background:#faf9f7}h1{font-size:1.3rem;margin-bottom:.5rem;color:#b45309}';
+  html+='.field{margin-bottom:1rem}.field label{display:block;font-size:.82rem;font-weight:600;margin-bottom:.3rem;color:#78716c}input,textarea,select{width:100%;padding:.5rem;border:1px solid #e7e5e4;border-radius:6px;font-family:inherit;font-size:.88rem}textarea{height:80px;resize:vertical}';
+  html+='.btn{padding:.6rem 1.5rem;background:#b45309;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:.9rem;font-weight:600}.stars{font-size:1.5rem;cursor:pointer}.star{color:#e7e5e4}.star.filled{color:#b45309}</style></head><body>';
+  html+='<h1>Beta Reader Feedback</h1><p style="color:#78716c;margin-bottom:1.5rem">'+setup.title+' by '+setup.author+' ('+setup.genre+')</p>';
+  html+='<form id="f"><div class="field"><label>Your Name</label><input name="name" placeholder="Optional"></div>';
+  html+='<div class="field"><label>Overall (1-5)</label><select name="overall"><option>1</option><option>2</option><option>3</option><option selected>4</option><option>5</option></select></div>';
+  html+='<div class="field"><label>Pacing</label><select name="pacing"><option>Too Slow</option><option selected>Just Right</option><option>Too Fast</option></select></div>';
+  setup.characters.forEach(function(c){html+='<div class="field"><label>'+c+' (1-5)</label><select name="char_'+c+'"><option>1</option><option>2</option><option>3</option><option selected>4</option><option>5</option></select></div>'});
+  html+='<div class="field"><label>Favorite Scene</label><textarea name="fav"></textarea></div>';
+  html+='<div class="field"><label>Confusing Parts</label><textarea name="confusing"></textarea></div>';
+  html+='<div class="field"><label>Suggestions</label><textarea name="suggestions"></textarea></div>';
+  html+='<div class="field"><label>Would Recommend?</label><select name="recommend"><option>Yes</option><option>Maybe</option><option>No</option></select></div>';
+  html+='<button class="btn" type="button" onclick="alert(\'Thank you! Please send this page back to the author.\')">Submit</button></form></body></html>';
+
+  var blob=new Blob([html],{type:'text/html'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='beta-reader-form.html';a.click();
+});
+
+// Fill form
+function renderForm(){
+  document.getElementById('formBookInfo').textContent=(setup.title||'Untitled')+' by '+(setup.author||'Unknown')+' ('+( setup.genre||'Genre')+')';
+
+  // Stars
+  var starsDiv=document.getElementById('overallStars');
+  starsDiv.innerHTML='';
+  for(var i=1;i<=5;i++){
+    var s=document.createElement('span');s.className='star'+(i<=currentStars?' filled':'');
+    s.textContent='\u2605';s.dataset.val=i;
+    s.addEventListener('click',function(){currentStars=parseInt(this.dataset.val);renderForm()});
+    starsDiv.appendChild(s);
+  }
+
+  // Pacing
+  document.querySelectorAll('.pacing-btn').forEach(function(btn){
+    btn.classList.toggle('selected',btn.dataset.val===currentPacing);
+    btn.onclick=function(){currentPacing=btn.dataset.val;renderForm()};
+  });
+
+  // Recommend
+  document.querySelectorAll('.rec-btn').forEach(function(btn){
+    btn.classList.toggle('selected',btn.dataset.val===currentRec);
+    btn.onclick=function(){currentRec=btn.dataset.val;renderForm()};
+  });
+
+  // Character ratings
+  var charDiv=document.getElementById('characterRatings');
+  charDiv.innerHTML='';
+  setup.characters.forEach(function(c){
+    var field=document.createElement('div');field.className='field';
+    field.innerHTML='<label>'+c+' (Rate 1-5)</label>';
+    var stars=document.createElement('div');stars.className='stars-input';
+    for(var i=1;i<=5;i++){
+      var s=document.createElement('span');s.className='star'+((charRatings[c]||0)>=i?' filled':'');
+      s.textContent='\u2605';s.dataset.char=c;s.dataset.val=i;
+      s.addEventListener('click',function(){charRatings[this.dataset.char]=parseInt(this.dataset.val);renderForm()});
+      stars.appendChild(s);
+    }
+    field.appendChild(stars);
+    charDiv.appendChild(field);
+  });
+}
+
+document.getElementById('submitBtn').addEventListener('click',function(){
+  var response={
+    name:document.getElementById('readerName').value||'Anonymous',
+    date:new Date().toISOString(),
+    overall:currentStars,
+    pacing:currentPacing,
+    characters:Object.assign({},charRatings),
+    favScene:document.getElementById('favScene').value,
+    leastFavScene:document.getElementById('leastFavScene').value,
+    confusing:document.getElementById('confusing').value,
+    suggestions:document.getElementById('suggestions').value,
+    recommend:currentRec
+  };
+  responses.push(response);
+  saveResponses();updateCount();
+  alert('Feedback submitted! Thank you.');
+  // Reset
+  currentStars=0;currentPacing='';currentRec='';charRatings={};
+  document.getElementById('readerName').value='';
+  ['favScene','leastFavScene','confusing','suggestions'].forEach(function(id){document.getElementById(id).value=''});
+  renderForm();
+});
+
+// Responses & summary
+function renderResponses(){
+  var list=document.getElementById('responsesList');
+  list.innerHTML='';
+  if(responses.length===0){list.innerHTML='<p style="color:var(--muted);text-align:center;padding:2rem">No responses yet.</p>';document.getElementById('summaryCard').innerHTML='';return}
+
+  // Summary
+  var avgStars=responses.reduce(function(s,r){return s+r.overall},0)/responses.length;
+  var pacingCounts={'too-slow':0,'just-right':0,'too-fast':0};
+  var recCounts={yes:0,maybe:0,no:0};
+  responses.forEach(function(r){
+    if(r.pacing) pacingCounts[r.pacing]=(pacingCounts[r.pacing]||0)+1;
+    if(r.recommend) recCounts[r.recommend]=(recCounts[r.recommend]||0)+1;
+  });
+
+  var summary=document.getElementById('summaryCard');
+  summary.innerHTML='<h3>Summary ('+responses.length+' responses)</h3>'+
+    '<div class="summary-stat"><span style="min-width:100px;font-size:.78rem">Overall</span><div class="bar"><div class="bar-fill" style="width:'+(avgStars/5*100)+'%"></div></div><span style="font-size:.78rem;font-weight:600;color:var(--accent)">'+avgStars.toFixed(1)+'/5</span></div>'+
+    '<div class="summary-stat"><span style="min-width:100px;font-size:.78rem">Pacing</span><span style="font-size:.75rem;color:var(--muted)">Slow: '+pacingCounts['too-slow']+' | Right: '+pacingCounts['just-right']+' | Fast: '+pacingCounts['too-fast']+'</span></div>'+
+    '<div class="summary-stat"><span style="min-width:100px;font-size:.78rem">Recommend</span><span style="font-size:.75rem;color:var(--muted)">Yes: '+recCounts.yes+' | Maybe: '+recCounts.maybe+' | No: '+recCounts.no+'</span></div>';
+
+  responses.forEach(function(r){
+    var card=document.createElement('div');card.className='response-card';
+    var stars='';for(var i=0;i<5;i++) stars+=(i<r.overall?'\u2605':'\u2606');
+    card.innerHTML='<div class="r-header"><span>'+r.name+'</span><span>'+new Date(r.date).toLocaleDateString()+'</span></div>'+
+      '<div class="r-stars">'+stars+'</div>'+
+      (r.pacing?'<div class="r-field"><span class="r-label">Pacing: </span>'+r.pacing+'</div>':'')+
+      (r.favScene?'<div class="r-field"><span class="r-label">Favorite: </span>'+r.favScene+'</div>':'')+
+      (r.suggestions?'<div class="r-field"><span class="r-label">Suggestions: </span>'+r.suggestions+'</div>':'')+
+      (r.recommend?'<div class="r-field"><span class="r-label">Recommend: </span>'+r.recommend+'</div>':'');
+    list.appendChild(card);
+  });
+}
+
+renderForm();updateCount();
+})();
+</script>
+</body>
+</html>

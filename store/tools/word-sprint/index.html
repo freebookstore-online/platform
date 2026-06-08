@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Writing Sprint Timer — FreeBookStore</title>
+<meta name="description" content="Timed writing sessions with WPM tracking, streaks, and motivational quotes.">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#faf9f7;--panel:#fff;--ink:#1c1917;--muted:#78716c;--accent:#b45309;--line:#e7e5e4}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;display:flex;flex-direction:column}
+
+.top-bar{display:flex;align-items:center;gap:.75rem;padding:.6rem 1.2rem;border-bottom:1px solid var(--line);background:var(--panel)}
+.back{font-size:.82rem;font-weight:600;color:var(--muted);text-decoration:none}
+.back:hover{color:var(--ink);text-decoration:none}
+.top-bar h1{font-family:'Lora',serif;font-size:1.1rem;font-weight:700}
+
+.setup{max-width:600px;margin:2rem auto;padding:0 1.5rem;text-align:center}
+.setup h2{font-family:'Lora',serif;font-size:1.3rem;margin-bottom:1rem}
+.duration-grid{display:flex;gap:.4rem;justify-content:center;flex-wrap:wrap;margin-bottom:1rem}
+.dur-btn{padding:.5rem 1rem;border:1px solid var(--line);border-radius:8px;background:var(--panel);cursor:pointer;font-size:.85rem;font-weight:600;font-family:inherit;color:var(--muted);transition:all .15s}
+.dur-btn:hover{border-color:var(--accent);color:var(--accent)}
+.dur-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.custom-dur{display:flex;gap:.3rem;justify-content:center;align-items:center;margin-bottom:1.5rem}
+.custom-dur input{width:60px;padding:.3rem;border:1px solid var(--line);border-radius:4px;font-family:inherit;font-size:.85rem;text-align:center}
+.custom-dur span{font-size:.78rem;color:var(--muted)}
+.start-btn{padding:.6rem 2rem;border:none;border-radius:8px;background:var(--accent);color:#fff;font-size:1rem;font-weight:700;cursor:pointer;font-family:inherit;transition:background .15s}
+.start-btn:hover{background:#92400e}
+
+.quote-box{max-width:500px;margin:1.5rem auto;padding:1rem;border-left:3px solid var(--accent);background:var(--panel);border-radius:0 8px 8px 0}
+.quote-box p{font-family:'Lora',serif;font-style:italic;font-size:.88rem;line-height:1.5;color:var(--muted)}
+.quote-box cite{display:block;font-size:.72rem;color:var(--accent);margin-top:.3rem;font-style:normal;font-weight:600}
+
+.sprint-view{display:none;flex:1;flex-direction:column}
+.timer-bar{display:flex;align-items:center;justify-content:center;gap:1rem;padding:.6rem 1rem;background:var(--panel);border-bottom:1px solid var(--line)}
+.timer-display{font-family:'Lora',serif;font-size:1.8rem;font-weight:700;color:var(--accent);min-width:100px;text-align:center}
+.timer-progress{flex:1;max-width:300px;height:4px;background:var(--line);border-radius:2px;overflow:hidden}
+.timer-fill{height:100%;background:var(--accent);transition:width 1s linear;width:0}
+.live-stats{display:flex;gap:1rem;font-size:.78rem;color:var(--muted)}
+.live-stats strong{color:var(--ink)}
+.end-sprint-btn{padding:.3rem .8rem;border:1px solid #dc2626;border-radius:6px;background:none;color:#dc2626;cursor:pointer;font-size:.75rem;font-weight:600;font-family:inherit}
+
+.writing-area{flex:1;display:flex;justify-content:center;padding:1.5rem}
+.writing-area textarea{width:100%;max-width:800px;border:none;outline:none;font-family:'Lora',serif;font-size:1.1rem;line-height:1.8;resize:none;background:transparent;color:var(--ink)}
+.writing-area textarea::placeholder{color:var(--muted)}
+
+.results{display:none;max-width:600px;margin:2rem auto;padding:0 1.5rem;text-align:center}
+.results h2{font-family:'Lora',serif;font-size:1.3rem;margin-bottom:1rem;color:var(--accent)}
+.result-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;margin-bottom:1.5rem}
+.result-card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:.75rem}
+.result-card .val{font-family:'Lora',serif;font-size:1.5rem;font-weight:700;color:var(--accent)}
+.result-card .label{font-size:.68rem;color:var(--muted);margin-top:.15rem}
+
+.history{max-width:600px;margin:0 auto 2rem;padding:0 1.5rem}
+.history h3{font-family:'Lora',serif;font-size:1rem;margin-bottom:.5rem}
+.history-item{display:flex;gap:.5rem;padding:.4rem 0;border-bottom:1px solid var(--line);font-size:.78rem;color:var(--muted);align-items:center}
+.history-item .date{min-width:80px}
+.history-item .dur{min-width:50px}
+.history-item .words{min-width:60px;color:var(--ink);font-weight:600}
+.history-item .wpm{color:var(--accent);font-weight:600}
+.streak-badge{display:inline-flex;align-items:center;gap:.3rem;background:rgba(180,83,9,.1);color:var(--accent);padding:.3rem .7rem;border-radius:99px;font-size:.78rem;font-weight:600;margin-bottom:1rem}
+</style>
+</head>
+<body>
+<div class="top-bar">
+<a href="/" class="back">< FreeBookStore</a>
+<h1>Writing Sprint Timer</h1>
+</div>
+
+<div class="setup" id="setup">
+<h2>Choose Your Sprint</h2>
+<div class="duration-grid">
+<button class="dur-btn" data-min="5">5 min</button>
+<button class="dur-btn" data-min="10">10 min</button>
+<button class="dur-btn active" data-min="15">15 min</button>
+<button class="dur-btn" data-min="25">25 min</button>
+<button class="dur-btn" data-min="30">30 min</button>
+<button class="dur-btn" data-min="45">45 min</button>
+<button class="dur-btn" data-min="60">60 min</button>
+</div>
+<div class="custom-dur"><span>Custom:</span><input type="number" id="customMin" min="1" max="120" value="15"><span>min</span></div>
+<button class="start-btn" id="startBtn">Start Sprint</button>
+<div class="quote-box" id="quoteBox"><p id="quoteText"></p><cite id="quoteAuthor"></cite></div>
+<div id="streakDisplay"></div>
+</div>
+
+<div class="sprint-view" id="sprintView">
+<div class="timer-bar">
+<span class="timer-display" id="timerDisplay">15:00</span>
+<div class="timer-progress"><div class="timer-fill" id="timerFill"></div></div>
+<div class="live-stats">
+<span>Words: <strong id="liveWords">0</strong></span>
+<span>WPM: <strong id="liveWpm">0</strong></span>
+</div>
+<button class="end-sprint-btn" id="endSprintBtn">End Sprint</button>
+</div>
+<div class="writing-area">
+<textarea id="writingArea" placeholder="Start writing... focus on getting words down. Don't edit, just write." autofocus></textarea>
+</div>
+</div>
+
+<div class="results" id="results">
+<h2>Sprint Complete!</h2>
+<div class="result-cards">
+<div class="result-card"><div class="val" id="resWords">0</div><div class="label">Words</div></div>
+<div class="result-card"><div class="val" id="resDuration">0</div><div class="label">Minutes</div></div>
+<div class="result-card"><div class="val" id="resWpm">0</div><div class="label">WPM</div></div>
+</div>
+<div class="quote-box"><p id="endQuote"></p><cite id="endQuoteAuthor"></cite></div>
+<button class="start-btn" id="newSprint" style="margin-top:1rem">New Sprint</button>
+</div>
+
+<div class="history" id="historySection">
+<h3>Sprint History</h3>
+<div id="historyList"></div>
+</div>
+
+<script src="/related.js"></script>
+<script>
+(function(){
+var QUOTES=[
+"The first draft is just you telling yourself the story. — Terry Pratchett",
+"Start writing, no matter what. The water does not flow until the faucet is turned on. — Louis L'Amour",
+"You can always edit a bad page. You can't edit a blank page. — Jodi Picoult",
+"The scariest moment is always just before you start. — Stephen King",
+"Write drunk, edit sober. — Ernest Hemingway",
+"There is no greater agony than bearing an untold story inside you. — Maya Angelou",
+"A word after a word after a word is power. — Margaret Atwood",
+"If you want to be a writer, you must do two things above all others: read a lot and write a lot. — Stephen King",
+"Writing is its own reward. — Henry Miller",
+"I can fix a bad page. I can't fix a blank page. — Nora Roberts",
+"The art of writing is the art of applying the seat of the pants to the seat of the chair. — Mary Heaton Vorse",
+"Almost all good writing begins with terrible first efforts. — Anne Lamott",
+"Don't get it right, just get it written. — James Thurber",
+"One day I will find the right words, and they will be simple. — Jack Kerouac",
+"We write to taste life twice, in the moment and in retrospect. — Anais Nin",
+"Either write something worth reading or do something worth writing. — Benjamin Franklin",
+"A professional writer is an amateur who didn't quit. — Richard Bach",
+"You fail only if you stop writing. — Ray Bradbury",
+"Fill your paper with the breathings of your heart. — William Wordsworth",
+"I do not over-intellectualize the production process. I try to keep it simple: tell the story. — Tom Clancy",
+"The first draft of anything is garbage. — Ernest Hemingway",
+"Writing is easy. All you have to do is cross out the wrong words. — Mark Twain",
+"Imagination is the beginning of creation. — George Bernard Shaw",
+"To survive, you must tell stories. — Umberto Eco",
+"Read, read, read. Read everything. — William Faulkner",
+"Write what should not be forgotten. — Isabel Allende",
+"Creativity is intelligence having fun. — Albert Einstein",
+"Start by doing what's necessary; then do what's possible; and suddenly you are doing the impossible. — Francis of Assisi",
+"No tears in the writer, no tears in the reader. — Robert Frost",
+"The purpose of a writer is to keep civilization from destroying itself. — Albert Camus",
+"Writers live twice. — Natalie Goldberg",
+"Every secret of a writer's soul is written in the works. — Virginia Woolf",
+"If the book is true, it will find an audience. — Wally Lamb",
+"I write because I don't know what I think until I read what I say. — Flannery O'Connor",
+"Substitute 'damn' every time you're inclined to write 'very'; your editor will delete it and the writing will be just as it should be. — Mark Twain",
+"You don't start out writing good stuff. You start out writing crap. — Octavia E. Butler",
+"How vain it is to sit down to write when you have not stood up to live. — Henry David Thoreau",
+"The role of a writer is not to say what we all can say, but what we are unable to say. — Anais Nin",
+"Write hard and clear about what hurts. — Ernest Hemingway",
+"I kept always two books in my pocket, one to read, one to write in. — Robert Louis Stevenson",
+"Lock up your libraries if you like; but there is no gate that can shut out the force of the mind. — Virginia Woolf",
+"In order to write about life first you must live it. — Ernest Hemingway",
+"Description begins in the writer's imagination, but should finish in the reader's. — Stephen King",
+"Close the door. Write with no one looking over your shoulder. — Barbara Kingsolver",
+"Every writer I know has trouble writing. — Joseph Heller",
+"Planning to write is not writing. Outlining is not writing. Talking about writing is not writing. Only writing is writing. — E.L. Doctorow",
+"Writing a book is a horrible, exhausting struggle. One would never undertake such a thing if one were not driven. — George Orwell",
+"I love deadlines. I love the whooshing noise they make as they go by. — Douglas Adams",
+"Tomorrow may be hell, but today was a good writing day, and on the good writing days nothing else matters. — Neil Gaiman",
+"The pages are still blank, but there is a miraculous feeling of the words being there. — Vladimir Nabokov"
+];
+
+var duration=15;
+var timer=null;
+var secondsLeft=0;
+var totalSeconds=0;
+var startTime=0;
+var history=JSON.parse(localStorage.getItem('fbook-sprints')||'[]');
+
+function randomQuote(){
+  var q=QUOTES[Math.floor(Math.random()*QUOTES.length)];
+  var dash=q.lastIndexOf(' — ');
+  if(dash===-1) dash=q.lastIndexOf(' - ');
+  return{text:q.substring(0,dash),author:q.substring(dash+3)};
+}
+
+function showQuote(textEl,authorEl){
+  var q=randomQuote();
+  document.getElementById(textEl).textContent=q.text;
+  document.getElementById(authorEl).textContent='— '+q.author;
+}
+
+function getStreak(){
+  if(history.length===0) return 0;
+  var streak=1;var today=new Date().toDateString();
+  var dates=[...new Set(history.map(function(h){return new Date(h.date).toDateString()}))].sort(function(a,b){return new Date(b)-new Date(a)});
+  if(dates[0]!==today&&dates[0]!==new Date(Date.now()-86400000).toDateString()) return 0;
+  for(var i=1;i<dates.length;i++){
+    var diff=new Date(dates[i-1])-new Date(dates[i]);
+    if(diff<=86400000*1.5) streak++;else break;
+  }
+  return streak;
+}
+
+function renderStreak(){
+  var s=getStreak();
+  document.getElementById('streakDisplay').innerHTML=s>0?'<div class="streak-badge">&#128293; '+s+' day streak</div>':'';
+}
+
+function renderHistory(){
+  var list=document.getElementById('historyList');
+  list.innerHTML='';
+  history.slice(0,20).forEach(function(h){
+    var div=document.createElement('div');div.className='history-item';
+    var d=new Date(h.date);
+    div.innerHTML='<span class="date">'+(d.getMonth()+1)+'/'+d.getDate()+'</span><span class="dur">'+h.duration+'m</span><span class="words">'+h.words+' words</span><span class="wpm">'+h.wpm+' wpm</span>';
+    list.appendChild(div);
+  });
+  if(history.length===0) list.innerHTML='<p style="font-size:.78rem;color:var(--muted)">No sprints yet. Start your first one!</p>';
+}
+
+function countWords(text){return text.trim().split(/\s+/).filter(Boolean).length}
+
+function formatTime(s){return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
+
+function beep(){
+  try{var ac=new AudioContext();var o=ac.createOscillator();var g=ac.createGain();o.connect(g);g.connect(ac.destination);o.frequency.value=800;g.gain.value=0.3;o.start();o.stop(ac.currentTime+0.3);
+  setTimeout(function(){var o2=ac.createOscillator();var g2=ac.createGain();o2.connect(g2);g2.connect(ac.destination);o2.frequency.value=1000;g2.gain.value=0.3;o2.start();o2.stop(ac.currentTime+0.5)},400);
+  }catch(e){}
+}
+
+// Duration buttons
+document.querySelectorAll('.dur-btn').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    document.querySelectorAll('.dur-btn').forEach(function(b){b.classList.remove('active')});
+    btn.classList.add('active');
+    duration=parseInt(btn.dataset.min);
+    document.getElementById('customMin').value=duration;
+  });
+});
+document.getElementById('customMin').addEventListener('input',function(){
+  duration=parseInt(this.value)||15;
+  document.querySelectorAll('.dur-btn').forEach(function(b){
+    b.classList.toggle('active',parseInt(b.dataset.min)===duration);
+  });
+});
+
+// Start
+document.getElementById('startBtn').addEventListener('click',function(){
+  document.getElementById('setup').style.display='none';
+  document.getElementById('historySection').style.display='none';
+  document.getElementById('results').style.display='none';
+  var sv=document.getElementById('sprintView');
+  sv.style.display='flex';
+  document.getElementById('writingArea').value='';
+  document.getElementById('writingArea').focus();
+
+  totalSeconds=duration*60;secondsLeft=totalSeconds;startTime=Date.now();
+  document.getElementById('timerDisplay').textContent=formatTime(secondsLeft);
+
+  timer=setInterval(function(){
+    var elapsed=Math.floor((Date.now()-startTime)/1000);
+    secondsLeft=Math.max(0,totalSeconds-elapsed);
+    document.getElementById('timerDisplay').textContent=formatTime(secondsLeft);
+    document.getElementById('timerFill').style.width=((totalSeconds-secondsLeft)/totalSeconds*100)+'%';
+
+    var words=countWords(document.getElementById('writingArea').value);
+    document.getElementById('liveWords').textContent=words;
+    var mins=elapsed/60;
+    document.getElementById('liveWpm').textContent=mins>0?Math.round(words/mins):0;
+
+    if(secondsLeft<=0){clearInterval(timer);beep();endSprint()}
+  },1000);
+});
+
+function endSprint(){
+  clearInterval(timer);
+  var text=document.getElementById('writingArea').value;
+  var words=countWords(text);
+  var elapsed=Math.floor((Date.now()-startTime)/1000);
+  var mins=Math.max(1,Math.round(elapsed/60));
+  var wpm=Math.round(words/Math.max(1,elapsed/60));
+
+  history.unshift({date:new Date().toISOString(),duration:mins,words:words,wpm:wpm});
+  localStorage.setItem('fbook-sprints',JSON.stringify(history));
+
+  document.getElementById('sprintView').style.display='none';
+  document.getElementById('results').style.display='block';
+  document.getElementById('resWords').textContent=words;
+  document.getElementById('resDuration').textContent=mins;
+  document.getElementById('resWpm').textContent=wpm;
+  showQuote('endQuote','endQuoteAuthor');
+  document.getElementById('historySection').style.display='block';
+  renderHistory();renderStreak();
+}
+
+document.getElementById('endSprintBtn').addEventListener('click',endSprint);
+document.getElementById('newSprint').addEventListener('click',function(){
+  document.getElementById('results').style.display='none';
+  document.getElementById('setup').style.display='block';
+  showQuote('quoteText','quoteAuthor');
+});
+
+showQuote('quoteText','quoteAuthor');
+renderHistory();renderStreak();
+})();
+</script>
+</body>
+</html>

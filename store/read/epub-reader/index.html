@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>EPUB Reader — FreeBookStore</title>
+<meta name="description" content="Upload and read .epub files in your browser. Chapter navigation, reading settings, bookmarks.">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;700&family=Inter:wght@400;500;600;700&family=Merriweather:wght@400;700&family=Source+Code+Pro:wght@400&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#faf9f7;--panel:#fff;--ink:#1c1917;--muted:#78716c;--accent:#b45309;--line:#e7e5e4}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;display:flex;flex-direction:column}
+
+.top-bar{display:flex;align-items:center;gap:.75rem;padding:.6rem 1.2rem;border-bottom:1px solid var(--line);background:var(--panel);flex-wrap:wrap}
+.back{font-size:.82rem;font-weight:600;color:var(--muted);text-decoration:none}
+.back:hover{color:var(--ink);text-decoration:none}
+.top-bar h1{font-family:'Lora',serif;font-size:1.1rem;font-weight:700}
+.top-bar .progress-bar{flex:1;min-width:100px;height:4px;background:var(--line);border-radius:2px;overflow:hidden}
+.top-bar .progress-fill{height:100%;background:var(--accent);transition:width .3s;width:0}
+
+.drop-zone{max-width:600px;margin:3rem auto;padding:3rem;border:2px dashed var(--line);border-radius:12px;text-align:center;cursor:pointer;transition:border-color .2s}
+.drop-zone:hover,.drop-zone.dragover{border-color:var(--accent)}
+.drop-zone h2{font-family:'Lora',serif;font-size:1.3rem;margin-bottom:.5rem}
+.drop-zone p{color:var(--muted);font-size:.85rem}
+.drop-zone input{display:none}
+
+.reader-wrap{display:none;flex:1;position:relative}
+.sidebar{position:fixed;left:0;top:0;bottom:0;width:280px;background:var(--panel);border-right:1px solid var(--line);z-index:20;transform:translateX(-100%);transition:transform .3s;overflow-y:auto;padding:1rem}
+.sidebar.open{transform:translateX(0)}
+.sidebar h3{font-family:'Lora',serif;font-size:.95rem;margin-bottom:.75rem;color:var(--accent)}
+.toc-item{display:block;padding:.4rem .5rem;font-size:.78rem;color:var(--muted);border-radius:4px;cursor:pointer;transition:all .1s;border:none;background:none;width:100%;text-align:left;font-family:inherit}
+.toc-item:hover{background:rgba(180,83,9,.06);color:var(--ink)}
+.toc-item.active{background:rgba(180,83,9,.1);color:var(--accent);font-weight:600}
+
+.sidebar-toggle{position:fixed;left:.5rem;top:4rem;z-index:21;width:32px;height:32px;border-radius:6px;border:1px solid var(--line);background:var(--panel);cursor:pointer;font-size:.9rem;display:flex;align-items:center;justify-content:center;transition:left .3s}
+.sidebar-toggle.shifted{left:284px}
+
+.content{max-width:700px;margin:0 auto;padding:2rem 1.5rem 4rem;line-height:1.8;font-size:1rem}
+.content.serif{font-family:'Merriweather','Lora',serif}
+.content.sans{font-family:'Inter',system-ui,sans-serif}
+.content.mono{font-family:'Source Code Pro',monospace}
+.content img{max-width:100%;height:auto;border-radius:4px}
+.content h1,.content h2,.content h3{font-family:'Lora',serif;margin:1.5rem 0 .5rem;color:var(--accent)}
+.content p{margin-bottom:1rem}
+
+.settings-bar{position:fixed;bottom:0;left:0;right:0;background:var(--panel);border-top:1px solid var(--line);padding:.5rem 1rem;display:flex;gap:.75rem;align-items:center;justify-content:center;flex-wrap:wrap;z-index:15}
+.setting{display:flex;align-items:center;gap:.3rem;font-size:.72rem;color:var(--muted)}
+.setting select,.setting input[type=range]{font-family:inherit;font-size:.72rem;border:1px solid var(--line);border-radius:4px;padding:.15rem .3rem;background:var(--panel)}
+.setting button{padding:.2rem .5rem;border:1px solid var(--line);border-radius:4px;background:var(--panel);cursor:pointer;font-size:.72rem;font-family:inherit;color:var(--muted)}
+.setting button.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.bookmark-btn{padding:.3rem .6rem;border:1px solid var(--line);border-radius:6px;background:var(--panel);cursor:pointer;font-size:.72rem;font-family:inherit;color:var(--accent);font-weight:600}
+.bookmark-btn:hover{background:rgba(180,83,9,.06)}
+
+.fullscreen-btn{position:fixed;right:.5rem;top:4rem;z-index:21;width:32px;height:32px;border-radius:6px;border:1px solid var(--line);background:var(--panel);cursor:pointer;font-size:.8rem;display:none;align-items:center;justify-content:center}
+
+body.theme-sepia{--bg:#f4ecd8;--panel:#faf3e3;--ink:#3d2b1f;--muted:#7d6b5d;--line:#d9cfc0}
+body.theme-dark{--bg:#1a1a1a;--panel:#222;--ink:#e0e0e0;--muted:#888;--line:#333;--accent:#d97706}
+</style>
+</head>
+<body>
+<div class="top-bar" id="topBar">
+<a href="/" class="back">< FreeBookStore</a>
+<h1 id="bookTitle">EPUB Reader</h1>
+<div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+</div>
+
+<div class="drop-zone" id="dropZone">
+<h2>Open an EPUB</h2>
+<p>Drag & drop an .epub file here, or click to browse</p>
+<input type="file" id="fileInput" accept=".epub">
+</div>
+
+<div class="reader-wrap" id="readerWrap">
+<button class="sidebar-toggle" id="sidebarToggle" title="Table of Contents">&#9776;</button>
+<button class="fullscreen-btn" id="fullscreenBtn" title="Fullscreen">&#x26F6;</button>
+<div class="sidebar" id="sidebar">
+<h3>Chapters</h3>
+<div id="tocList"></div>
+</div>
+<div class="content serif" id="content"></div>
+<div class="settings-bar" id="settingsBar">
+<div class="setting"><label>Font</label>
+<select id="fontFamily"><option value="serif">Serif</option><option value="sans">Sans</option><option value="mono">Mono</option></select></div>
+<div class="setting"><label>Size</label>
+<input type="range" id="fontSize" min="14" max="28" value="18" step="1"></div>
+<div class="setting"><label>Height</label>
+<input type="range" id="lineHeight" min="1.4" max="2.4" value="1.8" step="0.1"></div>
+<div class="setting"><label>Theme</label>
+<button class="theme-btn active" data-theme="">Light</button>
+<button class="theme-btn" data-theme="sepia">Sepia</button>
+<button class="theme-btn" data-theme="dark">Dark</button></div>
+<button class="bookmark-btn" id="bookmarkBtn">Bookmark</button>
+</div>
+</div>
+
+<script src="/related.js"></script>
+<script>
+(function(){
+var chapters=[];
+var currentChapter=0;
+var bookKey='';
+
+var dropZone=document.getElementById('dropZone');
+var fileInput=document.getElementById('fileInput');
+var readerWrap=document.getElementById('readerWrap');
+var content=document.getElementById('content');
+var tocList=document.getElementById('tocList');
+var sidebar=document.getElementById('sidebar');
+var sidebarToggle=document.getElementById('sidebarToggle');
+var progressFill=document.getElementById('progressFill');
+var fullscreenBtn=document.getElementById('fullscreenBtn');
+
+dropZone.addEventListener('click',function(){fileInput.click()});
+dropZone.addEventListener('dragover',function(e){e.preventDefault();dropZone.classList.add('dragover')});
+dropZone.addEventListener('dragleave',function(){dropZone.classList.remove('dragover')});
+dropZone.addEventListener('drop',function(e){e.preventDefault();dropZone.classList.remove('dragover');if(e.dataTransfer.files[0]) loadEpub(e.dataTransfer.files[0])});
+fileInput.addEventListener('change',function(){if(fileInput.files[0]) loadEpub(fileInput.files[0])});
+
+sidebarToggle.addEventListener('click',function(){
+  sidebar.classList.toggle('open');
+  sidebarToggle.classList.toggle('shifted');
+  sidebarToggle.textContent=sidebar.classList.contains('open')?'\u2715':'\u2630';
+});
+
+fullscreenBtn.style.display='flex';
+fullscreenBtn.addEventListener('click',function(){
+  if(!document.fullscreenElement) document.documentElement.requestFullscreen().catch(function(){});
+  else document.exitFullscreen();
+});
+
+document.getElementById('fontFamily').addEventListener('change',function(e){
+  content.className='content '+e.target.value;
+});
+document.getElementById('fontSize').addEventListener('input',function(e){
+  content.style.fontSize=e.target.value+'px';
+});
+document.getElementById('lineHeight').addEventListener('input',function(e){
+  content.style.lineHeight=e.target.value;
+});
+document.querySelectorAll('.theme-btn').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    document.querySelectorAll('.theme-btn').forEach(function(b){b.classList.remove('active')});
+    btn.classList.add('active');
+    document.body.className=btn.dataset.theme?'theme-'+btn.dataset.theme:'';
+  });
+});
+
+document.getElementById('bookmarkBtn').addEventListener('click',function(){
+  if(!bookKey) return;
+  var scrollPos=window.scrollY;
+  localStorage.setItem('fbook-bm-'+bookKey,JSON.stringify({chapter:currentChapter,scroll:scrollPos}));
+  this.textContent='Bookmarked!';
+  var self=this;
+  setTimeout(function(){self.textContent='Bookmark'},1500);
+});
+
+async function loadEpub(file){
+  bookKey=file.name.replace(/[^a-z0-9]/gi,'').substring(0,30);
+  var buf=await file.arrayBuffer();
+  var view=new DataView(buf);
+  var files={};
+
+  // Simple ZIP parser (no library needed)
+  var offset=0;
+  while(offset<buf.byteLength-4){
+    var sig=view.getUint32(offset,true);
+    if(sig!==0x04034b50) break;
+    var nameLen=view.getUint16(offset+26,true);
+    var extraLen=view.getUint16(offset+28,true);
+    var compSize=view.getUint32(offset+18,true);
+    var uncompSize=view.getUint32(offset+22,true);
+    var compression=view.getUint16(offset+8,true);
+    var name=new TextDecoder().decode(new Uint8Array(buf,offset+30,nameLen));
+    var dataStart=offset+30+nameLen+extraLen;
+    var raw=new Uint8Array(buf,dataStart,compSize);
+
+    if(compression===0){
+      files[name]=raw;
+    } else if(compression===8){
+      try{
+        var ds=new DecompressionStream('deflate-raw');
+        var writer=ds.writable.getWriter();
+        var reader=ds.readable.getReader();
+        var chunks=[];
+        writer.write(raw).then(function(){writer.close()});
+        var result=await readAll(reader);
+        files[name]=result;
+      }catch(e){files[name]=raw}
+    }
+    offset=dataStart+compSize;
+  }
+
+  async function readAll(reader){
+    var chunks=[];var total=0;
+    while(true){
+      var r=await reader.read();
+      if(r.done) break;
+      chunks.push(r.value);total+=r.value.byteLength;
+    }
+    var merged=new Uint8Array(total);var off=0;
+    chunks.forEach(function(c){merged.set(c,off);off+=c.byteLength});
+    return merged;
+  }
+
+  // Find HTML/XHTML files
+  chapters=[];
+  var htmlFiles=Object.keys(files).filter(function(f){return /\.(x?html?|htm)$/i.test(f)&&!/toc/i.test(f)}).sort();
+  if(htmlFiles.length===0) htmlFiles=Object.keys(files).filter(function(f){return /\.(x?html?)$/i.test(f)}).sort();
+
+  // Try to use OPF spine order
+  var opfFile=Object.keys(files).find(function(f){return /\.opf$/i.test(f)});
+  if(opfFile){
+    var opfText=new TextDecoder().decode(files[opfFile]);
+    var opfDir=opfFile.replace(/[^/]*$/,'');
+    var manifestItems={};
+    var manifestMatch=opfText.match(/<manifest>([\s\S]*?)<\/manifest>/i);
+    if(manifestMatch){
+      var itemRe=/<item[^>]*id="([^"]*)"[^>]*href="([^"]*)"[^>]*/gi;
+      var m;while((m=itemRe.exec(manifestMatch[1]))!==null){manifestItems[m[1]]=opfDir+decodeURIComponent(m[2])}
+    }
+    var spineMatch=opfText.match(/<spine[^>]*>([\s\S]*?)<\/spine>/i);
+    if(spineMatch){
+      var spineOrder=[];
+      var spineRe=/<itemref[^>]*idref="([^"]*)"[^>]*/gi;
+      while((m=spineRe.exec(spineMatch[1]))!==null){
+        if(manifestItems[m[1]]) spineOrder.push(manifestItems[m[1]]);
+      }
+      if(spineOrder.length>0){
+        htmlFiles=spineOrder.filter(function(f){return files[f]});
+      }
+    }
+    // Get book title
+    var titleMatch=opfText.match(/<dc:title[^>]*>([^<]+)/i);
+    if(titleMatch) document.getElementById('bookTitle').textContent=titleMatch[1];
+  }
+
+  htmlFiles.forEach(function(f,i){
+    var html=new TextDecoder().decode(files[f]);
+    var title='Chapter '+(i+1);
+    var tMatch=html.match(/<title[^>]*>([^<]+)/i);
+    if(tMatch&&tMatch[1].trim()) title=tMatch[1].trim();
+    var hMatch=html.match(/<h[12][^>]*>([^<]+)/i);
+    if(hMatch&&hMatch[1].trim().length<80) title=hMatch[1].trim();
+    // Extract body content
+    var bodyMatch=html.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+    var bodyHtml=bodyMatch?bodyMatch[1]:html;
+    chapters.push({title:title,html:bodyHtml,file:f});
+  });
+
+  if(chapters.length===0){alert('No readable content found in this EPUB.');return}
+
+  dropZone.style.display='none';
+  readerWrap.style.display='flex';
+  readerWrap.style.flexDirection='column';
+  readerWrap.style.flex='1';
+
+  renderToc();
+
+  // Restore bookmark
+  var bm=localStorage.getItem('fbook-bm-'+bookKey);
+  if(bm){
+    try{var bmData=JSON.parse(bm);showChapter(bmData.chapter);setTimeout(function(){window.scrollTo(0,bmData.scroll)},100)}
+    catch(e){showChapter(0)}
+  } else showChapter(0);
+}
+
+function renderToc(){
+  tocList.innerHTML='';
+  chapters.forEach(function(ch,i){
+    var btn=document.createElement('button');
+    btn.className='toc-item'+(i===currentChapter?' active':'');
+    btn.textContent=ch.title;
+    btn.addEventListener('click',function(){showChapter(i);sidebar.classList.remove('open');sidebarToggle.classList.remove('shifted');sidebarToggle.textContent='\u2630'});
+    tocList.appendChild(btn);
+  });
+}
+
+function showChapter(idx){
+  if(idx<0||idx>=chapters.length) return;
+  currentChapter=idx;
+  content.innerHTML=chapters[idx].html;
+  window.scrollTo(0,0);
+  progressFill.style.width=((idx+1)/chapters.length*100)+'%';
+  document.querySelectorAll('.toc-item').forEach(function(t,i){t.classList.toggle('active',i===idx)});
+
+  // Add prev/next nav
+  var nav=document.createElement('div');
+  nav.style.cssText='display:flex;justify-content:space-between;padding:2rem 0;border-top:1px solid var(--line);margin-top:2rem';
+  if(idx>0){var prev=document.createElement('button');prev.textContent='< Previous';prev.style.cssText='background:none;border:1px solid var(--line);padding:.4rem .8rem;border-radius:6px;cursor:pointer;font-family:inherit;font-size:.82rem;color:var(--accent)';prev.addEventListener('click',function(){showChapter(idx-1)});nav.appendChild(prev)}else{nav.appendChild(document.createElement('span'))}
+  if(idx<chapters.length-1){var next=document.createElement('button');next.textContent='Next >';next.style.cssText='background:var(--accent);border:none;padding:.4rem .8rem;border-radius:6px;cursor:pointer;font-family:inherit;font-size:.82rem;color:#fff';next.addEventListener('click',function(){showChapter(idx+1)});nav.appendChild(next)}
+  content.appendChild(nav);
+}
+})();
+</script>
+</body>
+</html>

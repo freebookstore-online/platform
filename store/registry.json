@@ -1,0 +1,100 @@
+{
+  "tools": [
+    {
+      "id": "library",
+      "name": "Free Book Library",
+      "description": "50 classic public domain books. Search, filter by genre, save to reading list.",
+      "category": "read",
+      "icon": "📚",
+      "iconBg": "#fef3c7"
+    },
+    {
+      "id": "epub-reader",
+      "name": "EPUB Reader",
+      "description": "Upload and read .epub files. Chapter navigation, reading settings, bookmarks.",
+      "category": "read",
+      "icon": "📖",
+      "iconBg": "#fef3c7"
+    },
+    {
+      "id": "audiobook-player",
+      "name": "Audiobook Player",
+      "description": "Text-to-speech reader. Paste text or upload files. Voice, speed, sleep timer.",
+      "category": "read",
+      "icon": "🎧",
+      "iconBg": "#fef3c7"
+    },
+    {
+      "id": "book-writer",
+      "name": "Book Writing Studio",
+      "description": "Chapter-based editor with rich text, word count, auto-save, and export.",
+      "category": "create",
+      "icon": "✍️",
+      "iconBg": "#fde68a"
+    },
+    {
+      "id": "outline-planner",
+      "name": "Book Outline Planner",
+      "description": "Three-act structure, drag-and-drop scenes, character tracker, timeline view.",
+      "category": "create",
+      "icon": "🗂️",
+      "iconBg": "#fde68a"
+    },
+    {
+      "id": "cover-designer",
+      "name": "Book Cover Designer",
+      "description": "Design covers with templates, fonts, backgrounds. Download PNG or SVG.",
+      "category": "create",
+      "icon": "🎨",
+      "iconBg": "#fde68a"
+    },
+    {
+      "id": "word-sprint",
+      "name": "Writing Sprint Timer",
+      "description": "Timed writing sessions. WPM tracking, streaks, motivational quotes.",
+      "category": "tools",
+      "icon": "⏱️",
+      "iconBg": "#fed7aa"
+    },
+    {
+      "id": "isbn-lookup",
+      "name": "ISBN & Book Metadata",
+      "description": "Look up books by ISBN, validate, convert ISBN-10/13, export citations.",
+      "category": "tools",
+      "icon": "🔍",
+      "iconBg": "#fed7aa"
+    },
+    {
+      "id": "manuscript-formatter",
+      "name": "Manuscript Formatter",
+      "description": "Format text to industry standard. Double-spaced, proper headers, page count.",
+      "category": "tools",
+      "icon": "📄",
+      "iconBg": "#fed7aa"
+    },
+    {
+      "id": "beta-reader-form",
+      "name": "Beta Reader Feedback",
+      "description": "Create feedback forms for beta readers. Collect and summarize responses.",
+      "category": "tools",
+      "icon": "📝",
+      "iconBg": "#fed7aa"
+    },
+    {
+      "id": "blurb-generator",
+      "name": "Book Blurb Generator",
+      "description": "Generate book blurbs from genre, character, conflict. Template + AI modes.",
+      "category": "tools",
+      "icon": "💬",
+      "iconBg": "#fed7aa"
+    },
+    {
+      "id": "reading-tracker",
+      "name": "Reading Tracker",
+      "description": "Track books, log pages, set goals, view charts. All stored locally.",
+      "category": "tools",
+      "icon": "📊",
+      "iconBg": "#fed7aa"
+    }
+  ]
+}

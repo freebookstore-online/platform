@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Free Book Library — FreeBookStore</title>
+<meta name="description" content="50 classic public domain books. Search, filter by genre, save to reading list.">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#faf9f7;--panel:#fff;--ink:#1c1917;--muted:#78716c;--accent:#b45309;--line:#e7e5e4;--font-body:'Inter',system-ui,sans-serif;--font-display:'Lora',Georgia,serif}
+body{font-family:var(--font-body);background:var(--bg);color:var(--ink);min-height:100vh}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+
+.top-bar{display:flex;align-items:center;gap:.75rem;padding:.6rem 1.2rem;border-bottom:1px solid var(--line);background:var(--panel);flex-wrap:wrap}
+.back{font-size:.82rem;font-weight:600;color:var(--muted);text-decoration:none}
+.back:hover{color:var(--ink);text-decoration:none}
+.top-bar h1{font-family:var(--font-display);font-size:1.1rem;font-weight:700;flex:1}
+.powered{font-size:.7rem;color:var(--muted);background:var(--bg);padding:.2rem .6rem;border-radius:99px;border:1px solid var(--line)}
+.powered a{font-weight:600}
+
+.controls{max-width:1100px;margin:0 auto;padding:1rem 1.2rem;display:flex;flex-wrap:wrap;gap:.5rem;align-items:center}
+.search{flex:1;min-width:200px;max-width:400px;padding:.45rem .8rem;border:1px solid var(--line);border-radius:8px;font-size:.85rem;font-family:inherit;background:var(--panel);outline:none}
+.search:focus{border-color:var(--accent)}
+.view-toggle{display:flex;gap:0;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.view-btn{padding:.35rem .65rem;font-size:.75rem;font-weight:600;background:var(--panel);border:none;cursor:pointer;color:var(--muted);font-family:inherit}
+.view-btn.active{background:var(--accent);color:#fff}
+.genre-bar{max-width:1100px;margin:0 auto;padding:0 1.2rem .5rem;display:flex;gap:.35rem;flex-wrap:wrap}
+.genre-btn{padding:.3rem .7rem;border-radius:99px;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:.72rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s}
+.genre-btn:hover{border-color:var(--accent);color:var(--ink)}
+.genre-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.count{font-size:.78rem;color:var(--muted);margin-left:auto}
+
+.grid{max-width:1100px;margin:0 auto;padding:0 1.2rem 2rem;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.65rem}
+.grid.list-view{grid-template-columns:1fr}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:.8rem;display:flex;flex-direction:column;gap:.4rem;transition:border-color .15s,transform .15s;cursor:pointer;text-decoration:none;color:inherit;position:relative}
+.card:hover{border-color:var(--accent);transform:translateY(-1px);text-decoration:none}
+.grid.list-view .card{flex-direction:row;align-items:center;gap:.8rem}
+.cover{width:100%;aspect-ratio:2/3;background:linear-gradient(135deg,#fef3c7,#fde68a);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:2rem;flex-shrink:0}
+.grid.list-view .cover{width:50px;height:75px;font-size:1.2rem;aspect-ratio:auto}
+.card-info{flex:1;min-width:0}
+.card-title{font-family:var(--font-display);font-size:.88rem;font-weight:700;line-height:1.3;margin-bottom:.15rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card-author{font-size:.72rem;color:var(--muted);margin-bottom:.2rem}
+.card-genre{font-size:.65rem;padding:.1rem .4rem;border-radius:4px;background:rgba(180,83,9,.08);color:var(--accent);display:inline-block;font-weight:500}
+.card-actions{position:absolute;top:.5rem;right:.5rem;display:flex;gap:.3rem}
+.wish-btn{width:26px;height:26px;border-radius:50%;border:1px solid var(--line);background:var(--panel);cursor:pointer;font-size:.7rem;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.wish-btn:hover,.wish-btn.saved{background:var(--accent);border-color:var(--accent);color:#fff}
+.card.hidden{display:none}
+
+.tabs-row{max-width:1100px;margin:0 auto;padding:0 1.2rem;display:flex;gap:0;border-bottom:1px solid var(--line);margin-bottom:.5rem}
+.tab{padding:.5rem 1rem;font-size:.82rem;font-weight:600;color:var(--muted);background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;font-family:inherit}
+.tab:hover{color:var(--ink)}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+
+footer{text-align:center;padding:1rem;font-size:.7rem;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="top-bar">
+<a href="/" class="back">< FreeBookStore</a>
+<h1>Free Book Library</h1>
+<span class="powered">Powered by <a href="https://bepublished.online">BePublished</a></span>
+</div>
+
+<div class="tabs-row">
+<button class="tab active" data-tab="browse">Browse</button>
+<button class="tab" data-tab="reading-list">Want to Read <span id="wtr-count"></span></button>
+<button class="tab" data-tab="recent">Recently Read</button>
+</div>
+
+<div class="controls" id="browse-controls">
+<input type="text" class="search" id="search" placeholder="Search by title or author...">
+<span class="count" id="count">50 books</span>
+<div class="view-toggle">
+<button class="view-btn active" data-view="grid" title="Grid">&#9638;</button>
+<button class="view-btn" data-view="list" title="List">&#9776;</button>
+</div>
+</div>
+<div class="genre-bar" id="genre-bar"></div>
+
+<div class="grid" id="grid"></div>
+<div class="grid" id="reading-list-grid" style="display:none"></div>
+<div class="grid" id="recent-grid" style="display:none"></div>
+
+<footer>FreeBookStore &mdash; <a href="https://bepublished.online">BePublished</a></footer>
+<script src="/related.js"></script>
+<script>
+(function(){
+var BOOKS=[
+{t:"Pride and Prejudice",a:"Jane Austen",g:"Fiction",s:"pride-and-prejudice",e:"📕"},
+{t:"Moby-Dick",a:"Herman Melville",g:"Adventure",s:"moby-dick",e:"🐋"},
+{t:"Frankenstein",a:"Mary Shelley",g:"Horror",s:"frankenstein",e:"⚡"},
+{t:"Dracula",a:"Bram Stoker",g:"Horror",s:"dracula",e:"🧛"},
+{t:"Jane Eyre",a:"Charlotte Bronte",g:"Fiction",s:"jane-eyre",e:"📕"},
+{t:"Wuthering Heights",a:"Emily Bronte",g:"Fiction",s:"wuthering-heights",e:"🌪️"},
+{t:"Great Expectations",a:"Charles Dickens",g:"Fiction",s:"great-expectations",e:"📕"},
+{t:"A Tale of Two Cities",a:"Charles Dickens",g:"Fiction",s:"a-tale-of-two-cities",e:"📕"},
+{t:"Oliver Twist",a:"Charles Dickens",g:"Fiction",s:"oliver-twist",e:"📕"},
+{t:"The Picture of Dorian Gray",a:"Oscar Wilde",g:"Fiction",s:"the-picture-of-dorian-gray",e:"🖼️"},
+{t:"The Adventures of Sherlock Holmes",a:"Arthur Conan Doyle",g:"Fiction",s:"the-adventures-of-sherlock-holmes",e:"🔍"},
+{t:"The War of the Worlds",a:"H.G. Wells",g:"Science",s:"the-war-of-the-worlds",e:"🛸"},
+{t:"The Time Machine",a:"H.G. Wells",g:"Science",s:"the-time-machine",e:"⏰"},
+{t:"The Invisible Man",a:"H.G. Wells",g:"Science",s:"the-invisible-man",e:"👻"},
+{t:"Treasure Island",a:"Robert Louis Stevenson",g:"Adventure",s:"treasure-island",e:"🏴‍☠️"},
+{t:"The Strange Case of Dr Jekyll and Mr Hyde",a:"Robert Louis Stevenson",g:"Horror",s:"dr-jekyll-and-mr-hyde",e:"🧪"},
+{t:"Adventures of Huckleberry Finn",a:"Mark Twain",g:"Adventure",s:"huckleberry-finn",e:"🛶"},
+{t:"The Adventures of Tom Sawyer",a:"Mark Twain",g:"Adventure",s:"tom-sawyer",e:"🎣"},
+{t:"Crime and Punishment",a:"Fyodor Dostoevsky",g:"Fiction",s:"crime-and-punishment",e:"⚖️"},
+{t:"The Brothers Karamazov",a:"Fyodor Dostoevsky",g:"Fiction",s:"the-brothers-karamazov",e:"📕"},
+{t:"Anna Karenina",a:"Leo Tolstoy",g:"Fiction",s:"anna-karenina",e:"🚂"},
+{t:"War and Peace",a:"Leo Tolstoy",g:"Fiction",s:"war-and-peace",e:"⚔️"},
+{t:"The Republic",a:"Plato",g:"Philosophy",s:"the-republic",e:"🏛️"},
+{t:"Meditations",a:"Marcus Aurelius",g:"Philosophy",s:"meditations",e:"🏛️"},
+{t:"Beyond Good and Evil",a:"Friedrich Nietzsche",g:"Philosophy",s:"beyond-good-and-evil",e:"💭"},
+{t:"Thus Spoke Zarathustra",a:"Friedrich Nietzsche",g:"Philosophy",s:"thus-spoke-zarathustra",e:"⛰️"},
+{t:"The Origin of Species",a:"Charles Darwin",g:"Science",s:"the-origin-of-species",e:"🧬"},
+{t:"Relativity",a:"Albert Einstein",g:"Science",s:"relativity",e:"💫"},
+{t:"The Iliad",a:"Homer",g:"Poetry",s:"the-iliad",e:"🏺"},
+{t:"The Odyssey",a:"Homer",g:"Poetry",s:"the-odyssey",e:"⛵"},
+{t:"Leaves of Grass",a:"Walt Whitman",g:"Poetry",s:"leaves-of-grass",e:"🌿"},
+{t:"The Divine Comedy",a:"Dante Alighieri",g:"Poetry",s:"the-divine-comedy",e:"🔥"},
+{t:"Paradise Lost",a:"John Milton",g:"Poetry",s:"paradise-lost",e:"😇"},
+{t:"Romeo and Juliet",a:"William Shakespeare",g:"Drama",s:"romeo-and-juliet",e:"🎭"},
+{t:"Hamlet",a:"William Shakespeare",g:"Drama",s:"hamlet",e:"💀"},
+{t:"Macbeth",a:"William Shakespeare",g:"Drama",s:"macbeth",e:"🗡️"},
+{t:"A Midsummer Night's Dream",a:"William Shakespeare",g:"Drama",s:"a-midsummer-nights-dream",e:"🧚"},
+{t:"The Importance of Being Earnest",a:"Oscar Wilde",g:"Drama",s:"the-importance-of-being-earnest",e:"🎩"},
+{t:"Heart of Darkness",a:"Joseph Conrad",g:"Fiction",s:"heart-of-darkness",e:"🌑"},
+{t:"The Metamorphosis",a:"Franz Kafka",g:"Fiction",s:"the-metamorphosis",e:"🪲"},
+{t:"Don Quixote",a:"Miguel de Cervantes",g:"Adventure",s:"don-quixote",e:"🐴"},
+{t:"The Count of Monte Cristo",a:"Alexandre Dumas",g:"Adventure",s:"the-count-of-monte-cristo",e:"🏰"},
+{t:"Around the World in Eighty Days",a:"Jules Verne",g:"Adventure",s:"around-the-world-in-eighty-days",e:"🌍"},
+{t:"Twenty Thousand Leagues Under the Seas",a:"Jules Verne",g:"Adventure",s:"twenty-thousand-leagues",e:"🐙"},
+{t:"The Art of War",a:"Sun Tzu",g:"Non-Fiction",s:"the-art-of-war",e:"⚔️"},
+{t:"The Prince",a:"Niccolo Machiavelli",g:"Non-Fiction",s:"the-prince",e:"👑"},
+{t:"Common Sense",a:"Thomas Paine",g:"Non-Fiction",s:"common-sense",e:"📜"},
+{t:"Walden",a:"Henry David Thoreau",g:"Non-Fiction",s:"walden",e:"🏕️"},
+{t:"Narrative of the Life of Frederick Douglass",a:"Frederick Douglass",g:"Non-Fiction",s:"frederick-douglass",e:"✊"},
+{t:"The Call of the Wild",a:"Jack London",g:"Adventure",s:"the-call-of-the-wild",e:"🐺"}
+];
+
+var GENRES=["All","Fiction","Non-Fiction","Philosophy","Science","Poetry","Drama","Horror","Adventure"];
+var wantToRead=JSON.parse(localStorage.getItem('fbook-wtr')||'[]');
+var recentlyRead=JSON.parse(localStorage.getItem('fbook-recent')||'[]');
+var currentGenre='All';
+var currentView='grid';
+var currentTab='browse';
+
+function saveWtr(){localStorage.setItem('fbook-wtr',JSON.stringify(wantToRead))}
+function saveRecent(){localStorage.setItem('fbook-recent',JSON.stringify(recentlyRead))}
+
+var genreBar=document.getElementById('genre-bar');
+GENRES.forEach(function(g){
+  var btn=document.createElement('button');
+  btn.className='genre-btn'+(g==='All'?' active':'');
+  btn.textContent=g;
+  btn.addEventListener('click',function(){
+    currentGenre=g;
+    document.querySelectorAll('.genre-btn').forEach(function(b){b.classList.remove('active')});
+    btn.classList.add('active');
+    renderBooks();
+  });
+  genreBar.appendChild(btn);
+});
+
+document.querySelectorAll('.view-btn').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    document.querySelectorAll('.view-btn').forEach(function(b){b.classList.remove('active')});
+    btn.classList.add('active');
+    currentView=btn.dataset.view;
+    var g=document.getElementById('grid');
+    if(currentView==='list') g.classList.add('list-view'); else g.classList.remove('list-view');
+  });
+});
+
+document.querySelectorAll('.tab').forEach(function(tab){
+  tab.addEventListener('click',function(){
+    document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active')});
+    tab.classList.add('active');
+    currentTab=tab.dataset.tab;
+    document.getElementById('grid').style.display=currentTab==='browse'?'':'none';
+    document.getElementById('browse-controls').style.display=currentTab==='browse'?'':'none';
+    document.getElementById('genre-bar').style.display=currentTab==='browse'?'':'none';
+    document.getElementById('reading-list-grid').style.display=currentTab==='reading-list'?'':'none';
+    document.getElementById('recent-grid').style.display=currentTab==='recent'?'':'none';
+    if(currentTab==='reading-list') renderReadingList();
+    if(currentTab==='recent') renderRecent();
+  });
+});
+
+function renderBooks(){
+  var q=document.getElementById('search').value.toLowerCase();
+  var grid=document.getElementById('grid');
+  grid.innerHTML='';
+  var shown=0;
+  BOOKS.forEach(function(b){
+    var matchGenre=currentGenre==='All'||b.g===currentGenre;
+    var matchSearch=!q||b.t.toLowerCase().includes(q)||b.a.toLowerCase().includes(q);
+    if(!matchGenre||!matchSearch) return;
+    shown++;
+    var isSaved=wantToRead.indexOf(b.s)!==-1;
+    var card=document.createElement('a');
+    card.className='card';
+    card.href='https://bepublished.online/read/'+b.s;
+    card.target='_blank';
+    card.innerHTML='<div class="cover">'+b.e+'</div><div class="card-info"><div class="card-title">'+b.t+'</div><div class="card-author">'+b.a+'</div><span class="card-genre">'+b.g+'</span></div><div class="card-actions"><button class="wish-btn'+(isSaved?' saved':'')+'" data-slug="'+b.s+'" title="'+(isSaved?'Remove from':'Add to')+' reading list">'+(isSaved?'&#9829;':'&#9825;')+'</button></div>';
+    card.querySelector('.wish-btn').addEventListener('click',function(e){
+      e.preventDefault();e.stopPropagation();
+      var idx=wantToRead.indexOf(b.s);
+      if(idx===-1){wantToRead.push(b.s)}else{wantToRead.splice(idx,1)}
+      saveWtr();renderBooks();updateWtrCount();
+    });
+    card.addEventListener('click',function(){
+      if(recentlyRead.indexOf(b.s)===-1) recentlyRead.unshift(b.s);
+      if(recentlyRead.length>20) recentlyRead.pop();
+      saveRecent();
+    });
+    grid.appendChild(card);
+  });
+  document.getElementById('count').textContent=shown+' book'+(shown!==1?'s':'');
+}
+
+function renderReadingList(){
+  var grid=document.getElementById('reading-list-grid');
+  grid.innerHTML='';
+  if(wantToRead.length===0){grid.innerHTML='<p style="color:var(--muted);padding:2rem;text-align:center">No books saved yet. Click the heart on any book to add it.</p>';return}
+  wantToRead.forEach(function(slug){
+    var b=BOOKS.find(function(x){return x.s===slug});
+    if(!b) return;
+    var card=document.createElement('a');card.className='card';card.href='https://bepublished.online/read/'+b.s;card.target='_blank';
+    card.innerHTML='<div class="cover">'+b.e+'</div><div class="card-info"><div class="card-title">'+b.t+'</div><div class="card-author">'+b.a+'</div><span class="card-genre">'+b.g+'</span></div>';
+    grid.appendChild(card);
+  });
+}
+
+function renderRecent(){
+  var grid=document.getElementById('recent-grid');
+  grid.innerHTML='';
+  if(recentlyRead.length===0){grid.innerHTML='<p style="color:var(--muted);padding:2rem;text-align:center">No recently read books yet. Open a book to start tracking.</p>';return}
+  recentlyRead.forEach(function(slug){
+    var b=BOOKS.find(function(x){return x.s===slug});
+    if(!b) return;
+    var card=document.createElement('a');card.className='card';card.href='https://bepublished.online/read/'+b.s;card.target='_blank';
+    card.innerHTML='<div class="cover">'+b.e+'</div><div class="card-info"><div class="card-title">'+b.t+'</div><div class="card-author">'+b.a+'</div><span class="card-genre">'+b.g+'</span></div>';
+    grid.appendChild(card);
+  });
+}
+
+function updateWtrCount(){
+  var el=document.getElementById('wtr-count');
+  el.textContent=wantToRead.length>0?'('+wantToRead.length+')':'';
+}
+
+document.getElementById('search').addEventListener('input',renderBooks);
+renderBooks();
+updateWtrCount();
+})();
+</script>
+</body>
+</html>

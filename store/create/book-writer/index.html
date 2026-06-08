@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Book Writing Studio — FreeBookStore</title>
+<meta name="description" content="Chapter-based book editor with rich text, word count, auto-save, and multi-format export.">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#faf9f7;--panel:#fff;--ink:#1c1917;--muted:#78716c;--accent:#b45309;--line:#e7e5e4}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;display:flex;flex-direction:column}
+
+.top-bar{display:flex;align-items:center;gap:.75rem;padding:.5rem 1rem;border-bottom:1px solid var(--line);background:var(--panel);flex-wrap:wrap}
+.back{font-size:.82rem;font-weight:600;color:var(--muted);text-decoration:none}
+.back:hover{color:var(--ink);text-decoration:none}
+.top-bar h1{font-family:'Lora',serif;font-size:1rem;font-weight:700}
+.project-select{margin-left:auto;display:flex;gap:.3rem;align-items:center}
+.project-select select{font-family:inherit;font-size:.78rem;border:1px solid var(--line);border-radius:4px;padding:.2rem .4rem;background:var(--panel)}
+.top-btn{padding:.25rem .5rem;border:1px solid var(--line);border-radius:4px;background:var(--panel);cursor:pointer;font-size:.7rem;font-family:inherit;color:var(--muted);font-weight:600}
+.top-btn:hover{border-color:var(--accent);color:var(--accent)}
+.top-btn.accent{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+.app{display:flex;flex:1;overflow:hidden}
+
+.sidebar{width:240px;border-right:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0}
+.sidebar h3{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;padding:.75rem .75rem .3rem;font-weight:600}
+.chapter-list{flex:1;overflow-y:auto;padding:0 .5rem}
+.ch-item{display:flex;align-items:center;gap:.3rem;padding:.4rem .5rem;border-radius:6px;cursor:pointer;font-size:.78rem;transition:all .1s;border:none;background:none;width:100%;text-align:left;font-family:inherit;color:var(--ink)}
+.ch-item:hover{background:rgba(180,83,9,.06)}
+.ch-item.active{background:rgba(180,83,9,.1);color:var(--accent);font-weight:600}
+.ch-item .ch-wc{margin-left:auto;font-size:.65rem;color:var(--muted)}
+.ch-item .ch-drag{cursor:grab;color:var(--muted);font-size:.7rem}
+.ch-actions{padding:.5rem .75rem;display:flex;gap:.3rem;border-top:1px solid var(--line)}
+.ch-actions button{flex:1;padding:.3rem;border:1px solid var(--line);border-radius:4px;background:var(--panel);cursor:pointer;font-size:.68rem;font-family:inherit;color:var(--muted)}
+.ch-actions button:hover{border-color:var(--accent);color:var(--accent)}
+
+.front-matter{padding:.75rem;border-bottom:1px solid var(--line)}
+.fm-field{margin-bottom:.4rem}
+.fm-field label{display:block;font-size:.65rem;color:var(--muted);font-weight:600;text-transform:uppercase;margin-bottom:.15rem}
+.fm-field input,.fm-field textarea,.fm-field select{width:100%;font-family:inherit;font-size:.78rem;border:1px solid var(--line);border-radius:4px;padding:.25rem .4rem;background:var(--bg);outline:none}
+.fm-field input:focus,.fm-field textarea:focus{border-color:var(--accent)}
+.fm-field textarea{height:50px;resize:vertical}
+
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.toolbar-bar{display:flex;gap:.25rem;padding:.4rem .75rem;border-bottom:1px solid var(--line);background:var(--panel);flex-wrap:wrap;align-items:center}
+.tb-btn{width:28px;height:28px;border:1px solid transparent;border-radius:4px;background:none;cursor:pointer;font-size:.82rem;display:flex;align-items:center;justify-content:center;color:var(--muted);font-weight:700;font-family:inherit}
+.tb-btn:hover{background:rgba(180,83,9,.06);border-color:var(--line)}
+.tb-sep{width:1px;height:20px;background:var(--line);margin:0 .2rem}
+.stats{margin-left:auto;font-size:.68rem;color:var(--muted);display:flex;gap:.75rem}
+.stats span{white-space:nowrap}
+
+.editor-area{flex:1;overflow-y:auto;padding:1.5rem 2rem}
+.editor{min-height:400px;outline:none;font-family:'Lora',serif;font-size:1rem;line-height:1.8;max-width:700px;margin:0 auto}
+.editor:empty::before{content:attr(data-placeholder);color:var(--muted);pointer-events:none}
+.editor h1,.editor h2,.editor h3{margin:1rem 0 .5rem;color:var(--accent)}
+.editor blockquote{border-left:3px solid var(--accent);padding-left:1rem;color:var(--muted);margin:1rem 0}
+.editor ul,.editor ol{margin:1rem 0;padding-left:1.5rem}
+
+.notes-panel{border-top:1px solid var(--line);background:var(--bg);padding:.75rem}
+.notes-panel h4{font-size:.72rem;color:var(--muted);margin-bottom:.3rem;cursor:pointer}
+.notes-panel textarea{width:100%;height:60px;border:1px solid var(--line);border-radius:4px;padding:.4rem;font-family:inherit;font-size:.78rem;resize:vertical;background:var(--panel);outline:none}
+
+.export-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:50;align-items:center;justify-content:center}
+.export-modal.open{display:flex}
+.export-box{background:var(--panel);border-radius:12px;padding:1.5rem;max-width:400px;width:90%;box-shadow:0 10px 30px rgba(0,0,0,.15)}
+.export-box h2{font-family:'Lora',serif;font-size:1.1rem;margin-bottom:1rem}
+.export-btn{display:block;width:100%;padding:.6rem;border:1px solid var(--line);border-radius:6px;background:var(--panel);cursor:pointer;font-family:inherit;font-size:.85rem;margin-bottom:.5rem;text-align:left;transition:border-color .15s}
+.export-btn:hover{border-color:var(--accent)}
+.export-btn strong{color:var(--accent)}
+.close-modal{float:right;background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--muted)}
+
+.auto-save-badge{font-size:.65rem;color:#16a34a;font-weight:500}
+
+@media(max-width:768px){.sidebar{width:200px}.editor-area{padding:1rem}}
+</style>
+</head>
+<body>
+<div class="top-bar">
+<a href="/" class="back">< FreeBookStore</a>
+<h1>Book Writing Studio</h1>
+<span class="auto-save-badge" id="saveStatus"></span>
+<div class="project-select">
+<select id="projectSelect"></select>
+<button class="top-btn" id="newProject">+ New</button>
+<button class="top-btn" id="deleteProject">Delete</button>
+<button class="top-btn accent" id="exportBtn">Export</button>
+</div>
+</div>
+
+<div class="app">
+<div class="sidebar">
+<div class="front-matter" id="frontMatter">
+<div class="fm-field"><label>Title</label><input id="fmTitle" placeholder="Book title"></div>
+<div class="fm-field"><label>Author</label><input id="fmAuthor" placeholder="Author name"></div>
+<div class="fm-field"><label>Genre</label>
+<select id="fmGenre"><option value="">Select genre</option><option>Fiction</option><option>Non-Fiction</option><option>Fantasy</option><option>Sci-Fi</option><option>Romance</option><option>Mystery</option><option>Thriller</option><option>Horror</option><option>Poetry</option><option>Drama</option></select></div>
+<div class="fm-field"><label>Description</label><textarea id="fmDesc" placeholder="Short description"></textarea></div>
+</div>
+<h3>Chapters</h3>
+<div class="chapter-list" id="chapterList"></div>
+<div class="ch-actions">
+<button id="addChapter">+ Add Chapter</button>
+<button id="reorderChapters">Reorder</button>
+</div>
+</div>
+
+<div class="main">
+<div class="toolbar-bar">
+<button class="tb-btn" onclick="document.execCommand('bold')" title="Bold"><b>B</b></button>
+<button class="tb-btn" onclick="document.execCommand('italic')" title="Italic"><i>I</i></button>
+<span class="tb-sep"></span>
+<button class="tb-btn" onclick="document.execCommand('formatBlock','',&quot;h2&quot;)" title="Heading">H</button>
+<button class="tb-btn" onclick="document.execCommand('formatBlock','',&quot;blockquote&quot;)" title="Quote">"</button>
+<button class="tb-btn" onclick="document.execCommand('insertUnorderedList')" title="List">&#8226;</button>
+<button class="tb-btn" onclick="document.execCommand('insertOrderedList')" title="Numbered">1.</button>
+<span class="tb-sep"></span>
+<button class="tb-btn" id="aiContinue" title="Continue writing (Chrome AI)" style="font-size:.7rem;width:auto;padding:0 .4rem">AI Continue</button>
+<div class="stats">
+<span id="wordCount">0 words</span>
+<span id="charCount">0 chars</span>
+<span id="paraCount">0 paras</span>
+<span id="readTime">0 min read</span>
+<span id="totalWords" style="color:var(--accent);font-weight:600">Total: 0</span>
+</div>
+</div>
+<div class="editor-area">
+<div class="editor" id="editor" contenteditable="true" data-placeholder="Start writing your chapter..."></div>
+</div>
+<div class="notes-panel">
+<h4 id="notesToggle">Chapter Notes (click to toggle)</h4>
+<textarea id="chapterNotes" placeholder="Planning notes for this chapter (won't be exported)..." style="display:none"></textarea>
+</div>
+</div>
+</div>
+
+<div class="export-modal" id="exportModal">
+<div class="export-box">
+<button class="close-modal" id="closeExport">&times;</button>
+<h2>Export Book</h2>
+<button class="export-btn" data-fmt="txt"><strong>.txt</strong> — Plain text</button>
+<button class="export-btn" data-fmt="md"><strong>.md</strong> — Markdown</button>
+<button class="export-btn" data-fmt="html"><strong>.html</strong> — Formatted HTML</button>
+<button class="export-btn" data-fmt="bundle"><strong>.html bundle</strong> — EPUB-like HTML</button>
+</div>
+</div>
+
+<script src="/related.js"></script>
+<script>
+(function(){
+var projects=JSON.parse(localStorage.getItem('fbook-writer-projects')||'[]');
+var currentProject=localStorage.getItem('fbook-writer-current')||'';
+var currentChIdx=0;
+var autoSaveTimer=null;
+var notesVisible=false;
+
+var editor=document.getElementById('editor');
+var projectSelect=document.getElementById('projectSelect');
+
+function defaultProject(){
+  return {id:Date.now().toString(36),name:'Untitled Book',frontMatter:{title:'',author:'',genre:'',description:''},chapters:[{title:'Chapter 1',content:'',notes:''}]};
+}
+
+function getProject(){return projects.find(function(p){return p.id===currentProject})}
+
+function saveAll(){
+  localStorage.setItem('fbook-writer-projects',JSON.stringify(projects));
+  localStorage.setItem('fbook-writer-current',currentProject);
+  document.getElementById('saveStatus').textContent='Saved';
+  setTimeout(function(){document.getElementById('saveStatus').textContent=''},2000);
+}
+
+function loadProjectList(){
+  projectSelect.innerHTML='';
+  projects.forEach(function(p){
+    var opt=document.createElement('option');
+    opt.value=p.id;opt.textContent=p.frontMatter.title||p.name;
+    if(p.id===currentProject) opt.selected=true;
+    projectSelect.appendChild(opt);
+  });
+}
+
+function loadProject(){
+  var proj=getProject();
+  if(!proj) return;
+  document.getElementById('fmTitle').value=proj.frontMatter.title||'';
+  document.getElementById('fmAuthor').value=proj.frontMatter.author||'';
+  document.getElementById('fmGenre').value=proj.frontMatter.genre||'';
+  document.getElementById('fmDesc').value=proj.frontMatter.description||'';
+  renderChapterList();
+  loadChapter(0);
+}
+
+function renderChapterList(){
+  var proj=getProject();if(!proj) return;
+  var list=document.getElementById('chapterList');
+  list.innerHTML='';
+  proj.chapters.forEach(function(ch,i){
+    var btn=document.createElement('button');
+    btn.className='ch-item'+(i===currentChIdx?' active':'');
+    var wc=ch.content?ch.content.replace(/<[^>]+>/g,'').trim().split(/\s+/).filter(Boolean).length:0;
+    btn.innerHTML='<span class="ch-drag">&#8942;</span> '+ch.title+' <span class="ch-wc">'+wc+'</span>';
+    btn.addEventListener('click',function(){saveCurrentChapter();loadChapter(i)});
+    list.appendChild(btn);
+  });
+  updateTotalWords();
+}
+
+function loadChapter(idx){
+  var proj=getProject();if(!proj||!proj.chapters[idx]) return;
+  saveCurrentChapter();
+  currentChIdx=idx;
+  editor.innerHTML=proj.chapters[idx].content||'';
+  document.getElementById('chapterNotes').value=proj.chapters[idx].notes||'';
+  updateStats();
+  renderChapterList();
+}
+
+function saveCurrentChapter(){
+  var proj=getProject();if(!proj||!proj.chapters[currentChIdx]) return;
+  proj.chapters[currentChIdx].content=editor.innerHTML;
+  proj.chapters[currentChIdx].notes=document.getElementById('chapterNotes').value;
+}
+
+function updateStats(){
+  var text=editor.innerText||'';
+  var words=text.trim().split(/\s+/).filter(Boolean);
+  var wc=words.length;
+  document.getElementById('wordCount').textContent=wc+' words';
+  document.getElementById('charCount').textContent=text.length+' chars';
+  var paras=(text.match(/\n\n/g)||[]).length+1;
+  document.getElementById('paraCount').textContent=paras+' paras';
+  document.getElementById('readTime').textContent=Math.ceil(wc/200)+' min read';
+}
+
+function updateTotalWords(){
+  var proj=getProject();if(!proj) return;
+  var total=0;
+  proj.chapters.forEach(function(ch){
+    var t=(ch.content||'').replace(/<[^>]+>/g,'').trim();
+    total+=t?t.split(/\s+/).filter(Boolean).length:0;
+  });
+  document.getElementById('totalWords').textContent='Total: '+total;
+}
+
+editor.addEventListener('input',function(){
+  updateStats();
+  clearTimeout(autoSaveTimer);
+  autoSaveTimer=setTimeout(function(){saveCurrentChapter();saveAll();renderChapterList()},2000);
+});
+
+['fmTitle','fmAuthor','fmGenre','fmDesc'].forEach(function(id){
+  document.getElementById(id).addEventListener('input',function(){
+    var proj=getProject();if(!proj) return;
+    proj.frontMatter={title:document.getElementById('fmTitle').value,author:document.getElementById('fmAuthor').value,genre:document.getElementById('fmGenre').value,description:document.getElementById('fmDesc').value};
+    if(id==='fmTitle'){proj.name=this.value||'Untitled Book';loadProjectList()}
+    clearTimeout(autoSaveTimer);
+    autoSaveTimer=setTimeout(function(){saveAll()},2000);
+  });
+});
+
+document.getElementById('addChapter').addEventListener('click',function(){
+  var proj=getProject();if(!proj) return;
+  saveCurrentChapter();
+  proj.chapters.push({title:'Chapter '+(proj.chapters.length+1),content:'',notes:''});
+  saveAll();loadChapter(proj.chapters.length-1);
+});
+
+document.getElementById('reorderChapters').addEventListener('click',function(){
+  var proj=getProject();if(!proj||proj.chapters.length<2) return;
+  var names=proj.chapters.map(function(c,i){return(i+1)+'. '+c.title}).join('\n');
+  var input=prompt('Reorder chapters (enter numbers in new order, comma-separated):\n\n'+names);
+  if(!input) return;
+  var order=input.split(',').map(function(n){return parseInt(n.trim())-1}).filter(function(n){return n>=0&&n<proj.chapters.length});
+  if(order.length!==proj.chapters.length){alert('Please include all chapter numbers.');return}
+  var reordered=order.map(function(i){return proj.chapters[i]});
+  proj.chapters=reordered;
+  saveAll();loadChapter(0);
+});
+
+document.getElementById('notesToggle').addEventListener('click',function(){
+  notesVisible=!notesVisible;
+  document.getElementById('chapterNotes').style.display=notesVisible?'':'none';
+});
+
+projectSelect.addEventListener('change',function(){
+  saveCurrentChapter();saveAll();
+  currentProject=this.value;currentChIdx=0;loadProject();
+});
+
+document.getElementById('newProject').addEventListener('click',function(){
+  saveCurrentChapter();saveAll();
+  var p=defaultProject();projects.push(p);currentProject=p.id;currentChIdx=0;
+  loadProjectList();loadProject();saveAll();
+});
+
+document.getElementById('deleteProject').addEventListener('click',function(){
+  if(projects.length<=1){alert('Cannot delete the last project.');return}
+  if(!confirm('Delete this project?')) return;
+  projects=projects.filter(function(p){return p.id!==currentProject});
+  currentProject=projects[0].id;currentChIdx=0;
+  loadProjectList();loadProject();saveAll();
+});
+
+// Export
+document.getElementById('exportBtn').addEventListener('click',function(){document.getElementById('exportModal').classList.add('open')});
+document.getElementById('closeExport').addEventListener('click',function(){document.getElementById('exportModal').classList.remove('open')});
+document.querySelectorAll('.export-btn').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    saveCurrentChapter();
+    var proj=getProject();if(!proj) return;
+    var fmt=this.dataset.fmt;
+    var fm=proj.frontMatter;
+    var output='';var filename=fm.title||'book';
+
+    if(fmt==='txt'){
+      output=(fm.title?fm.title+'\n'+'by '+fm.author+'\n\n':'');
+      proj.chapters.forEach(function(ch){
+        output+=ch.title+'\n\n'+(ch.content||'').replace(/<br\s*\/?>/gi,'\n').replace(/<\/p>/gi,'\n\n').replace(/<[^>]+>/g,'')+'\n\n';
+      });
+      download(filename+'.txt',output,'text/plain');
+    } else if(fmt==='md'){
+      output=(fm.title?'# '+fm.title+'\n\n*by '+fm.author+'*\n\n':'');
+      proj.chapters.forEach(function(ch){
+        output+='## '+ch.title+'\n\n'+htmlToMd(ch.content||'')+'\n\n';
+      });
+      download(filename+'.md',output,'text/markdown');
+    } else if(fmt==='html'||fmt==='bundle'){
+      var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>'+(fm.title||'Book')+'</title>';
+      html+='<style>body{font-family:Georgia,serif;max-width:700px;margin:2rem auto;padding:0 1.5rem;line-height:1.8;color:#1c1917}h1{text-align:center;margin-bottom:.5rem}h2{margin-top:3rem;color:#b45309;border-bottom:1px solid #e7e5e4;padding-bottom:.3rem}.author{text-align:center;color:#78716c;margin-bottom:2rem}blockquote{border-left:3px solid #b45309;padding-left:1rem;color:#78716c}</style></head><body>';
+      if(fm.title) html+='<h1>'+fm.title+'</h1>';
+      if(fm.author) html+='<p class="author">by '+fm.author+'</p>';
+      proj.chapters.forEach(function(ch){
+        html+='<h2>'+ch.title+'</h2>'+(ch.content||'');
+      });
+      html+='</body></html>';
+      download(filename+'.html',html,'text/html');
+    }
+    document.getElementById('exportModal').classList.remove('open');
+  });
+});
+
+function htmlToMd(html){
+  return html.replace(/<h[12][^>]*>(.*?)<\/h[12]>/gi,'## $1\n\n')
+    .replace(/<h3[^>]*>(.*?)<\/h3>/gi,'### $1\n\n')
+    .replace(/<b>(.*?)<\/b>/gi,'**$1**').replace(/<strong>(.*?)<\/strong>/gi,'**$1**')
+    .replace(/<i>(.*?)<\/i>/gi,'*$1*').replace(/<em>(.*?)<\/em>/gi,'*$1*')
+    .replace(/<blockquote[^>]*>(.*?)<\/blockquote>/gi,'> $1\n')
+    .replace(/<br\s*\/?>/gi,'\n').replace(/<\/p>/gi,'\n\n').replace(/<[^>]+>/g,'').trim();
+}
+
+function download(name,content,type){
+  var blob=new Blob([content],{type:type});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(a.href);
+}
+
+// Chrome AI continue
+document.getElementById('aiContinue').addEventListener('click',async function(){
+  if(!window.ai||!window.ai.languageModel){
+    alert('Chrome AI not available. Requires Chrome 138+ with built-in AI enabled.');return;
+  }
+  var text=editor.innerText.trim();
+  if(!text){alert('Write some text first.');return}
+  this.textContent='Writing...';this.disabled=true;
+  try{
+    var session=await window.ai.languageModel.create({systemPrompt:'You are a creative writing assistant. Continue the story/text naturally. Write one paragraph (3-5 sentences). Match the style and tone.'});
+    var last500=text.slice(-500);
+    var result=await session.prompt('Continue this text:\n\n'+last500);
+    editor.innerHTML+='\n<p>'+result+'</p>';
+    updateStats();
+  }catch(e){alert('AI error: '+e.message)}
+  this.textContent='AI Continue';this.disabled=false;
+});
+
+// Init
+if(projects.length===0){var p=defaultProject();projects.push(p);currentProject=p.id}
+if(!currentProject) currentProject=projects[0].id;
+loadProjectList();loadProject();
+})();
+</script>
+</body>
+</html>

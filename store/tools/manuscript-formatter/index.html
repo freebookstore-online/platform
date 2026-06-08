@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Manuscript Formatter — FreeBookStore</title>
+<meta name="description" content="Format your manuscript to industry standard. Double-spaced, proper headers, page count estimator.">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#faf9f7;--panel:#fff;--ink:#1c1917;--muted:#78716c;--accent:#b45309;--line:#e7e5e4}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+
+.top-bar{display:flex;align-items:center;gap:.75rem;padding:.6rem 1.2rem;border-bottom:1px solid var(--line);background:var(--panel)}
+.back{font-size:.82rem;font-weight:600;color:var(--muted);text-decoration:none}
+.back:hover{color:var(--ink);text-decoration:none}
+.top-bar h1{font-family:'Lora',serif;font-size:1.1rem;font-weight:700}
+
+.container{max-width:900px;margin:0 auto;padding:1.5rem}
+
+.input-section{margin-bottom:1.5rem}
+.input-section h2{font-family:'Lora',serif;font-size:1rem;margin-bottom:.5rem}
+textarea{width:100%;height:250px;border:1px solid var(--line);border-radius:8px;padding:.75rem;font-family:inherit;font-size:.88rem;resize:vertical;background:var(--panel);outline:none;line-height:1.6}
+textarea:focus{border-color:var(--accent)}
+
+.settings{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:1.2rem;margin-bottom:1.5rem}
+.settings h3{font-size:.82rem;color:var(--muted);margin-bottom:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.3px}
+.settings-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:.75rem}
+.s-field{display:flex;flex-direction:column;gap:.2rem}
+.s-field label{font-size:.68rem;color:var(--muted);font-weight:600}
+.s-field input,.s-field select{font-family:inherit;font-size:.78rem;border:1px solid var(--line);border-radius:4px;padding:.3rem .5rem;background:var(--bg);outline:none}
+.s-field input:focus,.s-field select:focus{border-color:var(--accent)}
+
+.actions{display:flex;gap:.5rem;margin-bottom:1.5rem;flex-wrap:wrap}
+.action-btn{padding:.5rem 1rem;border:1px solid var(--line);border-radius:8px;background:var(--panel);cursor:pointer;font-size:.82rem;font-weight:600;font-family:inherit;color:var(--muted);transition:all .15s}
+.action-btn:hover{border-color:var(--accent);color:var(--accent)}
+.action-btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.action-btn.primary:hover{background:#92400e}
+
+.stats-bar{display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;padding:.75rem;background:var(--panel);border:1px solid var(--line);border-radius:8px}
+.stat{font-size:.78rem;color:var(--muted)}.stat strong{color:var(--ink)}
+
+.preview-section{margin-bottom:1.5rem}
+.preview-section h3{font-family:'Lora',serif;font-size:1rem;margin-bottom:.5rem}
+.pages-container{display:flex;flex-direction:column;gap:1rem;align-items:center}
+.page{width:100%;max-width:612px;min-height:792px;background:#fff;border:1px solid var(--line);box-shadow:0 2px 12px rgba(0,0,0,.08);padding:72px 72px 72px 72px;position:relative;page-break-after:always}
+.page-header{position:absolute;top:36px;left:72px;right:72px;font-family:'Courier New',monospace;font-size:10px;color:var(--muted);display:flex;justify-content:space-between}
+.page-body{font-family:'Courier New',monospace;font-size:12px;line-height:2;white-space:pre-wrap;word-wrap:break-word}
+.page-body .chapter-break{text-align:center;margin:2em 0;font-weight:bold;text-transform:uppercase}
+.page-body .scene-break{text-align:center;margin:1.5em 0}
+.page-number{position:absolute;bottom:36px;right:72px;font-family:'Courier New',monospace;font-size:10px;color:var(--muted)}
+
+footer{text-align:center;padding:1.5rem;font-size:.7rem;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="top-bar">
+<a href="/" class="back">< FreeBookStore</a>
+<h1>Manuscript Formatter</h1>
+</div>
+
+<div class="container">
+<div class="input-section">
+<h2>Paste Your Manuscript</h2>
+<textarea id="manuscript" placeholder="Paste your manuscript text here...
+
+Use 'CHAPTER X' or 'Chapter X' lines for chapter breaks.
+Use '###' or '***' for scene breaks.
+The formatter will handle the rest."></textarea>
+</div>
+
+<div class="settings">
+<h3>Formatting Settings</h3>
+<div class="settings-grid">
+<div class="s-field"><label>Author Name</label><input id="authorName" value="Author Name" placeholder="Your name"></div>
+<div class="s-field"><label>Book Title</label><input id="bookTitle" value="Book Title" placeholder="Your book title"></div>
+<div class="s-field"><label>Font</label>
+<select id="fontChoice"><option value="Courier New">Courier New</option><option value="Times New Roman">Times New Roman</option></select></div>
+<div class="s-field"><label>Font Size</label>
+<select id="fontSize"><option value="12">12pt</option><option value="11">11pt</option><option value="10">10pt</option></select></div>
+<div class="s-field"><label>Line Spacing</label>
+<select id="lineSpacing"><option value="2">Double</option><option value="1.5">1.5</option><option value="1">Single</option></select></div>
+<div class="s-field"><label>Words/Page Target</label><input id="wordsPerPage" type="number" value="250" min="100" max="400"></div>
+</div>
+</div>
+
+<div class="actions">
+<button class="action-btn primary" id="formatBtn">Format Manuscript</button>
+<button class="action-btn" id="exportHtml">Export HTML (Print-Ready)</button>
+<button class="action-btn" id="exportTxt">Export Plain Text</button>
+</div>
+
+<div class="stats-bar" id="statsBar" style="display:none">
+<span class="stat">Words: <strong id="statWords">0</strong></span>
+<span class="stat">Pages: <strong id="statPages">0</strong></span>
+<span class="stat">Chapters: <strong id="statChapters">0</strong></span>
+<span class="stat">Paragraphs: <strong id="statParas">0</strong></span>
+<span class="stat">Estimated book pages: <strong id="statBookPages">0</strong></span>
+</div>
+
+<div class="preview-section" id="previewSection" style="display:none">
+<h3>Preview</h3>
+<div class="pages-container" id="pagesContainer"></div>
+</div>
+</div>
+
+<footer>FreeBookStore</footer>
+<script src="/related.js"></script>
+<script>
+(function(){
+var WORDS_PER_PAGE=250;
+
+function countWords(t){return t.trim().split(/\s+/).filter(Boolean).length}
+
+function formatManuscript(){
+  var text=document.getElementById('manuscript').value.trim();
+  if(!text){alert('Please paste your manuscript text.');return}
+
+  var author=document.getElementById('authorName').value||'Author';
+  var title=document.getElementById('bookTitle').value||'Title';
+  var font=document.getElementById('fontChoice').value;
+  var fontSize=parseInt(document.getElementById('fontSize').value);
+  var spacing=parseFloat(document.getElementById('lineSpacing').value);
+  WORDS_PER_PAGE=parseInt(document.getElementById('wordsPerPage').value)||250;
+
+  // Parse chapters and scenes
+  var lines=text.split('\n');
+  var pages=[];
+  var currentPageLines=[];
+  var linesPerPage=Math.floor(25/spacing*2); // approx lines per page
+  var pageNum=1;
+  var chapterCount=0;
+  var totalWords=countWords(text);
+  var paras=(text.match(/\n\s*\n/g)||[]).length+1;
+
+  function pushPage(){
+    if(currentPageLines.length>0){
+      pages.push({lines:currentPageLines.slice(),pageNum:pageNum});
+      pageNum++;currentPageLines=[];
+    }
+  }
+
+  for(var i=0;i<lines.length;i++){
+    var line=lines[i];
+
+    // Chapter break
+    if(/^(CHAPTER|Chapter)\s+\w/i.test(line.trim())){
+      pushPage();
+      chapterCount++;
+      // Start new page with chapter heading
+      currentPageLines.push('');currentPageLines.push('');currentPageLines.push('');
+      currentPageLines.push('CHAPTER_BREAK:'+line.trim());
+      currentPageLines.push('');currentPageLines.push('');
+      continue;
+    }
+
+    // Scene break
+    if(/^(###|\*\*\*|---)\s*$/.test(line.trim())){
+      currentPageLines.push('SCENE_BREAK');
+      continue;
+    }
+
+    // Empty line = paragraph break
+    if(line.trim()===''){
+      currentPageLines.push('');
+    } else {
+      // Indent first line of paragraph
+      var isNewPara=i===0||(i>0&&lines[i-1].trim()==='');
+      var formatted=(isNewPara?'     ':'')+line.trim();
+      currentPageLines.push(formatted);
+    }
+
+    if(currentPageLines.length>=linesPerPage) pushPage();
+  }
+  pushPage();
+
+  // Stats
+  document.getElementById('statsBar').style.display='flex';
+  document.getElementById('statWords').textContent=totalWords.toLocaleString();
+  document.getElementById('statPages').textContent=pages.length;
+  document.getElementById('statChapters').textContent=chapterCount||'(none detected)';
+  document.getElementById('statParas').textContent=paras;
+  document.getElementById('statBookPages').textContent=Math.ceil(totalWords/WORDS_PER_PAGE);
+
+  // Render preview
+  var container=document.getElementById('pagesContainer');
+  container.innerHTML='';
+  document.getElementById('previewSection').style.display='block';
+
+  var maxPreview=Math.min(pages.length,10);
+  for(var p=0;p<maxPreview;p++){
+    var page=pages[p];
+    var div=document.createElement('div');div.className='page';
+    div.style.fontFamily=font;div.style.fontSize=fontSize+'px';
+
+    div.innerHTML='<div class="page-header"><span>'+author+' / '+title+'</span><span>Page '+page.pageNum+'</span></div>';
+
+    var body=document.createElement('div');body.className='page-body';
+    body.style.lineHeight=spacing*2;
+
+    var html='';
+    page.lines.forEach(function(l){
+      if(l.startsWith('CHAPTER_BREAK:')){
+        html+='<div class="chapter-break">'+l.replace('CHAPTER_BREAK:','')+'</div>\n';
+      } else if(l==='SCENE_BREAK'){
+        html+='<div class="scene-break"># # #</div>\n';
+      } else {
+        html+=l+'\n';
+      }
+    });
+    body.innerHTML=html;
+    div.appendChild(body);
+    div.innerHTML+='<div class="page-number">'+page.pageNum+'</div>';
+    container.appendChild(div);
+  }
+  if(pages.length>maxPreview){
+    container.innerHTML+='<p style="color:var(--muted);font-size:.82rem;text-align:center;padding:1rem">Showing first '+maxPreview+' of '+pages.length+' pages. Export for the full manuscript.</p>';
+  }
+
+  window._formattedPages=pages;
+  window._formatSettings={author:author,title:title,font:font,fontSize:fontSize,spacing:spacing};
+}
+
+document.getElementById('formatBtn').addEventListener('click',formatManuscript);
+
+document.getElementById('exportHtml').addEventListener('click',function(){
+  if(!window._formattedPages){formatManuscript();if(!window._formattedPages) return}
+  var s=window._formatSettings;
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>'+s.title+' — Manuscript</title>';
+  html+='<style>@page{size:letter;margin:1in}body{font-family:"'+s.font+'",monospace;font-size:'+s.fontSize+'px;line-height:'+s.spacing*2+';color:#000;max-width:6.5in;margin:0 auto}';
+  html+='.page{page-break-after:always;min-height:9in;padding:0;position:relative}.page-header{font-size:10px;color:#666;display:flex;justify-content:space-between;margin-bottom:2em}';
+  html+='.chapter-break{text-align:center;margin:3em 0 2em;font-weight:bold;text-transform:uppercase}.scene-break{text-align:center;margin:1.5em 0}';
+  html+='@media print{body{max-width:none}}</style></head><body>';
+
+  window._formattedPages.forEach(function(page){
+    html+='<div class="page"><div class="page-header"><span>'+s.author+' / '+s.title+'</span><span>'+page.pageNum+'</span></div><pre style="font-family:inherit;white-space:pre-wrap">';
+    page.lines.forEach(function(l){
+      if(l.startsWith('CHAPTER_BREAK:')) html+='<div class="chapter-break">'+l.replace('CHAPTER_BREAK:','')+'</div>\n';
+      else if(l==='SCENE_BREAK') html+='<div class="scene-break"># # #</div>\n';
+      else html+=l+'\n';
+    });
+    html+='</pre></div>';
+  });
+  html+='</body></html>';
+  var blob=new Blob([html],{type:'text/html'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='manuscript-formatted.html';a.click();
+});
+
+document.getElementById('exportTxt').addEventListener('click',function(){
+  if(!window._formattedPages){formatManuscript();if(!window._formattedPages) return}
+  var s=window._formatSettings;
+  var txt='';
+  window._formattedPages.forEach(function(page){
+    txt+=s.author+' / '+s.title+'          Page '+page.pageNum+'\n\n';
+    page.lines.forEach(function(l){
+      if(l.startsWith('CHAPTER_BREAK:')) txt+='\n\n'+l.replace('CHAPTER_BREAK:','')+'\n\n';
+      else if(l==='SCENE_BREAK') txt+='\n# # #\n\n';
+      else txt+=l+'\n';
+    });
+    txt+='\n---PAGE BREAK---\n\n';
+  });
+  var blob=new Blob([txt],{type:'text/plain'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='manuscript-formatted.txt';a.click();
+});
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Book Cover Designer — FreeBookStore</title>
+<meta name="description" content="Design book covers with templates, fonts, backgrounds. Download as PNG or SVG.">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;700&family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&family=Merriweather:wght@400;700&family=Crimson+Text:wght@400;700&family=EB+Garamond:wght@400;700&family=Libre+Baskerville:wght@400;700&family=Raleway:wght@400;700&family=Montserrat:wght@400;700&family=Oswald:wght@400;700&family=Roboto+Slab:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#faf9f7;--panel:#fff;--ink:#1c1917;--muted:#78716c;--accent:#b45309;--line:#e7e5e4}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+
+.top-bar{display:flex;align-items:center;gap:.75rem;padding:.6rem 1.2rem;border-bottom:1px solid var(--line);background:var(--panel);flex-wrap:wrap}
+.back{font-size:.82rem;font-weight:600;color:var(--muted);text-decoration:none}
+.back:hover{color:var(--ink);text-decoration:none}
+.top-bar h1{font-family:'Lora',serif;font-size:1.1rem;font-weight:700}
+.download-actions{margin-left:auto;display:flex;gap:.3rem}
+.dl-btn{padding:.3rem .6rem;border:1px solid var(--line);border-radius:6px;background:var(--panel);cursor:pointer;font-size:.72rem;font-weight:600;font-family:inherit;color:var(--muted)}
+.dl-btn:hover{border-color:var(--accent);color:var(--accent)}
+.dl-btn.accent{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+.app{display:flex;gap:0;max-width:1400px;margin:0 auto;min-height:calc(100vh - 50px)}
+
+.controls-panel{width:300px;border-right:1px solid var(--line);background:var(--panel);overflow-y:auto;padding:1rem;flex-shrink:0}
+.ctrl-section{margin-bottom:1rem;border-bottom:1px solid var(--line);padding-bottom:.75rem}
+.ctrl-section:last-child{border-bottom:none}
+.ctrl-section h3{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:.5rem;font-weight:600}
+.ctrl-row{margin-bottom:.4rem}
+.ctrl-row label{display:block;font-size:.68rem;color:var(--muted);margin-bottom:.15rem;font-weight:500}
+.ctrl-row input[type=text],.ctrl-row textarea,.ctrl-row select{width:100%;font-family:inherit;font-size:.78rem;border:1px solid var(--line);border-radius:4px;padding:.25rem .4rem;background:var(--bg);outline:none}
+.ctrl-row input:focus,.ctrl-row textarea:focus{border-color:var(--accent)}
+.ctrl-row textarea{height:40px;resize:vertical}
+.ctrl-row input[type=color]{width:40px;height:28px;border:1px solid var(--line);border-radius:4px;cursor:pointer;padding:0}
+.ctrl-row input[type=range]{width:100%}
+.color-row{display:flex;gap:.3rem;align-items:center}
+.color-row input[type=text]{flex:1}
+
+.tmpl-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.3rem}
+.tmpl-btn{aspect-ratio:2/3;border:2px solid var(--line);border-radius:4px;background:var(--bg);cursor:pointer;font-size:.55rem;display:flex;align-items:center;justify-content:center;text-align:center;font-family:inherit;color:var(--muted);transition:border-color .15s;padding:.15rem}
+.tmpl-btn:hover{border-color:var(--accent)}
+.tmpl-btn.active{border-color:var(--accent);background:rgba(180,83,9,.06)}
+
+.dim-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.3rem}
+.dim-btn{padding:.25rem;border:1px solid var(--line);border-radius:4px;background:var(--panel);cursor:pointer;font-size:.65rem;font-family:inherit;color:var(--muted);text-align:center}
+.dim-btn:hover{border-color:var(--accent)}
+.dim-btn.active{border-color:var(--accent);color:var(--accent);font-weight:600}
+
+.font-grid{display:grid;grid-template-columns:1fr 1fr;gap:.2rem}
+.font-btn{padding:.3rem .4rem;border:1px solid var(--line);border-radius:4px;background:var(--panel);cursor:pointer;font-size:.7rem;text-align:center;transition:border-color .15s}
+.font-btn:hover{border-color:var(--accent)}
+.font-btn.active{border-color:var(--accent);color:var(--accent)}
+
+.preview-area{flex:1;display:flex;align-items:center;justify-content:center;padding:2rem;overflow:auto;background:repeating-conic-gradient(#e7e5e4 0% 25%, transparent 0% 50%) 50% / 20px 20px}
+
+.cover-canvas{box-shadow:0 8px 30px rgba(0,0,0,.15);position:relative;overflow:hidden}
+.cover-front{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:2rem;height:100%}
+.cover-title{font-weight:700;line-height:1.2;margin-bottom:.5rem;word-break:break-word}
+.cover-subtitle{font-weight:400;opacity:.8;margin-bottom:.5rem;word-break:break-word}
+.cover-author{font-weight:400;opacity:.7;margin-top:auto}
+
+.bg-options{display:flex;gap:.3rem;flex-wrap:wrap}
+.bg-btn{padding:.2rem .5rem;border:1px solid var(--line);border-radius:4px;background:var(--panel);cursor:pointer;font-size:.65rem;font-family:inherit;color:var(--muted)}
+.bg-btn:hover{border-color:var(--accent)}
+.bg-btn.active{border-color:var(--accent);color:var(--accent)}
+
+.upload-label{display:inline-block;padding:.25rem .5rem;border:1px solid var(--line);border-radius:4px;cursor:pointer;font-size:.68rem;color:var(--muted);margin-top:.3rem}
+.upload-label:hover{border-color:var(--accent)}
+.upload-label input{display:none}
+
+footer{text-align:center;padding:1rem;font-size:.7rem;color:var(--muted)}
+@media(max-width:800px){.app{flex-direction:column}.controls-panel{width:100%;max-height:50vh}}
+</style>
+</head>
+<body>
+<div class="top-bar">
+<a href="/" class="back">< FreeBookStore</a>
+<h1>Book Cover Designer</h1>
+<div class="download-actions">
+<button class="dl-btn" id="dlPng">PNG (Front)</button>
+<button class="dl-btn" id="dlWrap">PNG (Full Wrap)</button>
+<button class="dl-btn accent" id="dlSvg">SVG</button>
+</div>
+</div>
+
+<div class="app">
+<div class="controls-panel">
+<div class="ctrl-section">
+<h3>Dimensions</h3>
+<div class="dim-grid">
+<button class="dim-btn active" data-w="600" data-h="900">6x9"</button>
+<button class="dim-btn" data-w="500" data-h="800">5x8"</button>
+<button class="dim-btn" data-w="525" data-h="800">5.25x8"</button>
+</div>
+</div>
+
+<div class="ctrl-section">
+<h3>Template</h3>
+<div class="tmpl-grid">
+<button class="tmpl-btn active" data-tmpl="centered">Centered</button>
+<button class="tmpl-btn" data-tmpl="top-bottom">Top/Bot</button>
+<button class="tmpl-btn" data-tmpl="minimalist">Minimal</button>
+<button class="tmpl-btn" data-tmpl="typographic">Type</button>
+<button class="tmpl-btn" data-tmpl="gradient">Gradient</button>
+<button class="tmpl-btn" data-tmpl="pattern">Pattern</button>
+<button class="tmpl-btn" data-tmpl="split">Split</button>
+<button class="tmpl-btn" data-tmpl="overlay">Overlay</button>
+</div>
+</div>
+
+<div class="ctrl-section">
+<h3>Text</h3>
+<div class="ctrl-row"><label>Title</label><input type="text" id="titleInput" value="The Great Novel" placeholder="Book title"></div>
+<div class="ctrl-row"><label>Subtitle</label><input type="text" id="subtitleInput" value="" placeholder="Optional subtitle"></div>
+<div class="ctrl-row"><label>Author</label><input type="text" id="authorInput" value="Jane Author" placeholder="Author name"></div>
+</div>
+
+<div class="ctrl-section">
+<h3>Font</h3>
+<div class="font-grid" id="fontGrid"></div>
+</div>
+
+<div class="ctrl-section">
+<h3>Colors</h3>
+<div class="ctrl-row"><label>Background</label><div class="color-row"><input type="color" id="bgColor" value="#1c1917"><input type="text" id="bgColorText" value="#1c1917"></div></div>
+<div class="ctrl-row"><label>Text</label><div class="color-row"><input type="color" id="textColor" value="#faf9f7"><input type="text" id="textColorText" value="#faf9f7"></div></div>
+<div class="ctrl-row"><label>Accent</label><div class="color-row"><input type="color" id="accentColor" value="#b45309"><input type="text" id="accentColorText" value="#b45309"></div></div>
+</div>
+
+<div class="ctrl-section">
+<h3>Background</h3>
+<div class="bg-options">
+<button class="bg-btn active" data-bg="solid">Solid</button>
+<button class="bg-btn" data-bg="gradient">Gradient</button>
+<button class="bg-btn" data-bg="image">Image</button>
+<button class="bg-btn" data-bg="pattern">Pattern</button>
+</div>
+<label class="upload-label" id="bgUploadLabel" style="display:none">Upload Image<input type="file" id="bgUpload" accept="image/*"></label>
+</div>
+
+<div class="ctrl-section">
+<h3>Spine (Print)</h3>
+<div class="ctrl-row"><label>Page Count</label><input type="number" id="pageCount" value="300" min="1"></div>
+<div class="ctrl-row"><label>Spine Text</label><input type="text" id="spineText" value="" placeholder="Auto from title"></div>
+</div>
+
+<div class="ctrl-section">
+<h3>Back Cover</h3>
+<div class="ctrl-row"><label>Description</label><textarea id="backDesc" placeholder="Book description for back cover..."></textarea></div>
+</div>
+</div>
+
+<div class="preview-area">
+<canvas id="coverCanvas" width="600" height="900"></canvas>
+</div>
+</div>
+
+<script src="/related.js"></script>
+<script>
+(function(){
+var FONTS=['Playfair Display','Lora','Merriweather','Crimson Text','EB Garamond','Libre Baskerville','Raleway','Montserrat','Oswald','Roboto Slab'];
+var state={
+  w:600,h:900,template:'centered',font:'Playfair Display',
+  title:'The Great Novel',subtitle:'',author:'Jane Author',
+  bgColor:'#1c1917',textColor:'#faf9f7',accentColor:'#b45309',
+  bgType:'solid',bgImage:null,pageCount:300,spineText:'',backDesc:''
+};
+var canvas=document.getElementById('coverCanvas');
+var ctx=canvas.getContext('2d');
+
+// Font grid
+var fontGrid=document.getElementById('fontGrid');
+FONTS.forEach(function(f){
+  var btn=document.createElement('button');btn.className='font-btn'+(f===state.font?' active':'');
+  btn.textContent=f.split(' ')[0];btn.style.fontFamily=f;
+  btn.addEventListener('click',function(){
+    document.querySelectorAll('.font-btn').forEach(function(b){b.classList.remove('active')});
+    btn.classList.add('active');state.font=f;draw();
+  });
+  fontGrid.appendChild(btn);
+});
+
+// Dimension buttons
+document.querySelectorAll('.dim-btn').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    document.querySelectorAll('.dim-btn').forEach(function(b){b.classList.remove('active')});
+    btn.classList.add('active');
+    state.w=parseInt(btn.dataset.w);state.h=parseInt(btn.dataset.h);
+    canvas.width=state.w;canvas.height=state.h;draw();
+  });
+});
+
+// Template buttons
+document.querySelectorAll('.tmpl-btn').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    document.querySelectorAll('.tmpl-btn').forEach(function(b){b.classList.remove('active')});
+    btn.classList.add('active');state.template=btn.dataset.tmpl;draw();
+  });
+});
+
+// Background type
+document.querySelectorAll('.bg-btn').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    document.querySelectorAll('.bg-btn').forEach(function(b){b.classList.remove('active')});
+    btn.classList.add('active');state.bgType=btn.dataset.bg;
+    document.getElementById('bgUploadLabel').style.display=btn.dataset.bg==='image'?'':'none';
+    draw();
+  });
+});
+
+// Image upload
+document.getElementById('bgUpload').addEventListener('change',function(){
+  var f=this.files[0];if(!f) return;
+  var reader=new FileReader();
+  reader.onload=function(e){
+    var img=new Image();img.onload=function(){state.bgImage=img;draw()};
+    img.src=e.target.result;
+  };reader.readAsDataURL(f);
+});
+
+// Text inputs
+['titleInput','subtitleInput','authorInput','spineText','backDesc','pageCount'].forEach(function(id){
+  document.getElementById(id).addEventListener('input',function(){
+    var key=id==='titleInput'?'title':id==='subtitleInput'?'subtitle':id==='authorInput'?'author':id;
+    state[key]=this.value;draw();
+  });
+});
+
+// Color sync
+['bg','text','accent'].forEach(function(pre){
+  var picker=document.getElementById(pre+'Color');
+  var text=document.getElementById(pre+'ColorText');
+  picker.addEventListener('input',function(){text.value=this.value;state[pre+'Color']=this.value;draw()});
+  text.addEventListener('input',function(){picker.value=this.value;state[pre+'Color']=this.value;draw()});
+});
+
+function drawBg(){
+  if(state.bgType==='gradient'){
+    var g=ctx.createLinearGradient(0,0,0,state.h);
+    g.addColorStop(0,state.bgColor);g.addColorStop(1,state.accentColor);
+    ctx.fillStyle=g;
+  } else if(state.bgType==='image'&&state.bgImage){
+    ctx.drawImage(state.bgImage,0,0,state.w,state.h);
+    ctx.fillStyle='rgba(0,0,0,0.4)';
+  } else if(state.bgType==='pattern'){
+    ctx.fillStyle=state.bgColor;ctx.fillRect(0,0,state.w,state.h);
+    ctx.strokeStyle=state.accentColor;ctx.lineWidth=1;ctx.globalAlpha=0.15;
+    for(var i=0;i<state.w+state.h;i+=20){ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(0,i);ctx.stroke()}
+    ctx.globalAlpha=1;return;
+  } else {
+    ctx.fillStyle=state.bgColor;
+  }
+  ctx.fillRect(0,0,state.w,state.h);
+}
+
+function wrapText(text,x,maxW,fontSize,fontWeight){
+  ctx.font=fontWeight+' '+fontSize+'px '+state.font+', serif';
+  var words=text.split(' ');var lines=[];var line='';
+  words.forEach(function(w){
+    var test=line+(line?' ':'')+w;
+    if(ctx.measureText(test).width>maxW&&line){lines.push(line);line=w}
+    else line=test;
+  });
+  if(line) lines.push(line);
+  return lines;
+}
+
+function draw(){
+  canvas.width=state.w;canvas.height=state.h;
+  ctx.clearRect(0,0,state.w,state.h);
+  drawBg();
+
+  var pad=state.w*0.1;
+  var maxW=state.w-pad*2;
+  ctx.textAlign='center';
+  var cx=state.w/2;
+
+  if(state.template==='centered'||state.template==='gradient'||state.template==='overlay'){
+    // Title centered
+    var titleSize=Math.floor(state.w/10);
+    var titleLines=wrapText(state.title,cx,maxW,titleSize,'bold');
+    var startY=state.h*0.35;
+    ctx.fillStyle=state.textColor;
+    ctx.font='bold '+titleSize+'px '+state.font+', serif';
+    titleLines.forEach(function(l,i){ctx.fillText(l,cx,startY+i*(titleSize*1.2))});
+
+    if(state.subtitle){
+      var subSize=Math.floor(titleSize*0.45);
+      ctx.font='400 '+subSize+'px '+state.font+', serif';
+      ctx.globalAlpha=0.8;
+      ctx.fillText(state.subtitle,cx,startY+titleLines.length*(titleSize*1.2)+subSize);
+      ctx.globalAlpha=1;
+    }
+
+    var authSize=Math.floor(titleSize*0.4);
+    ctx.font='400 '+authSize+'px '+state.font+', serif';
+    ctx.globalAlpha=0.7;
+    ctx.fillText(state.author,cx,state.h*0.85);
+    ctx.globalAlpha=1;
+
+  } else if(state.template==='top-bottom'){
+    // Accent bar at top
+    ctx.fillStyle=state.accentColor;
+    ctx.fillRect(0,0,state.w,state.h*0.06);
+    ctx.fillRect(0,state.h*0.94,state.w,state.h*0.06);
+
+    var ts=Math.floor(state.w/10);
+    ctx.fillStyle=state.textColor;
+    ctx.font='bold '+ts+'px '+state.font;
+    var tl=wrapText(state.title,cx,maxW,ts,'bold');
+    var sy=state.h*0.25;
+    tl.forEach(function(l,i){ctx.fillText(l,cx,sy+i*(ts*1.2))});
+
+    ctx.font='400 '+Math.floor(ts*0.4)+'px '+state.font;
+    ctx.globalAlpha=0.7;
+    ctx.fillText(state.author,cx,state.h*0.8);
+    ctx.globalAlpha=1;
+
+  } else if(state.template==='minimalist'){
+    var ts=Math.floor(state.w/12);
+    ctx.fillStyle=state.textColor;
+    ctx.textAlign='left';
+    ctx.font='bold '+ts+'px '+state.font;
+    var tl=wrapText(state.title,pad,maxW,ts,'bold');
+    var sy=state.h*0.7;
+    tl.forEach(function(l,i){ctx.fillText(l,pad,sy+i*(ts*1.2))});
+    ctx.font='400 '+Math.floor(ts*0.5)+'px '+state.font;
+    ctx.globalAlpha=0.6;
+    ctx.fillText(state.author,pad,sy+tl.length*(ts*1.2)+ts*0.6);
+    ctx.globalAlpha=1;
+    // Accent line
+    ctx.fillStyle=state.accentColor;
+    ctx.fillRect(pad,sy-ts,maxW*0.3,3);
+
+  } else if(state.template==='typographic'){
+    var ts=Math.floor(state.w/6);
+    ctx.fillStyle=state.accentColor;ctx.globalAlpha=0.15;
+    ctx.font='bold '+ts+'px '+state.font;
+    for(var i=0;i<5;i++){ctx.fillText(state.title,cx,ts+i*ts*1.1)}
+    ctx.globalAlpha=1;
+    ctx.fillStyle=state.textColor;
+    var mainSize=Math.floor(state.w/8);
+    ctx.font='bold '+mainSize+'px '+state.font;
+    ctx.textAlign='center';
+    var ml=wrapText(state.title,cx,maxW,mainSize,'bold');
+    var my=state.h*0.4;
+    ml.forEach(function(l,i){ctx.fillText(l,cx,my+i*(mainSize*1.2))});
+    ctx.font='400 '+Math.floor(mainSize*0.35)+'px '+state.font;
+    ctx.fillText(state.author,cx,state.h*0.82);
+
+  } else if(state.template==='split'){
+    ctx.fillStyle=state.accentColor;
+    ctx.fillRect(0,0,state.w/2,state.h);
+    ctx.fillStyle=state.textColor;
+    ctx.textAlign='right';
+    var ts=Math.floor(state.w/12);
+    ctx.font='bold '+ts+'px '+state.font;
+    var tl=wrapText(state.title,0,state.w*0.4,ts,'bold');
+    var sy=state.h*0.4;
+    tl.forEach(function(l,i){ctx.fillText(l,state.w*0.45,sy+i*(ts*1.2))});
+    ctx.textAlign='left';
+    ctx.fillStyle=state.bgColor==='#1c1917'?'#faf9f7':'#1c1917';
+    ctx.font='400 '+Math.floor(ts*0.5)+'px '+state.font;
+    ctx.fillText(state.author,state.w*0.55,state.h*0.7);
+
+  } else if(state.template==='pattern'){
+    ctx.fillStyle=state.accentColor;ctx.globalAlpha=0.08;
+    for(var y=0;y<state.h;y+=40){for(var x=0;x<state.w;x+=40){ctx.beginPath();ctx.arc(x,y,8,0,Math.PI*2);ctx.fill()}}
+    ctx.globalAlpha=1;
+    // White box center
+    ctx.fillStyle=state.bgColor;ctx.globalAlpha=0.9;
+    ctx.fillRect(state.w*0.1,state.h*0.3,state.w*0.8,state.h*0.4);
+    ctx.globalAlpha=1;
+    ctx.fillStyle=state.textColor;ctx.textAlign='center';
+    var ts=Math.floor(state.w/10);
+    ctx.font='bold '+ts+'px '+state.font;
+    var tl=wrapText(state.title,cx,maxW*0.7,ts,'bold');
+    var sy=state.h*0.45;
+    tl.forEach(function(l,i){ctx.fillText(l,cx,sy+i*(ts*1.2))});
+    ctx.font='400 '+Math.floor(ts*0.4)+'px '+state.font;
+    ctx.fillText(state.author,cx,state.h*0.62);
+  }
+}
+
+// Downloads
+document.getElementById('dlPng').addEventListener('click',function(){
+  draw();
+  var a=document.createElement('a');a.download='cover.png';a.href=canvas.toDataURL('image/png');a.click();
+});
+
+document.getElementById('dlWrap').addEventListener('click',function(){
+  var spineW=Math.max(20,Math.round(parseInt(state.pageCount||300)/10));
+  var wrapW=state.w*2+spineW;
+  var wrapCanvas=document.createElement('canvas');
+  wrapCanvas.width=wrapW;wrapCanvas.height=state.h;
+  var wCtx=wrapCanvas.getContext('2d');
+
+  // Back cover
+  wCtx.fillStyle=state.bgColor;wCtx.fillRect(0,0,state.w,state.h);
+  wCtx.fillStyle=state.textColor;wCtx.font='400 '+Math.floor(state.w/25)+'px '+state.font;
+  wCtx.textAlign='left';
+  var desc=state.backDesc||state.title;
+  var words=desc.split(' ');var lines=[];var line='';
+  words.forEach(function(w){var t=line+(line?' ':'')+w;if(wCtx.measureText(t).width>state.w*0.7&&line){lines.push(line);line=w}else line=t});
+  if(line)lines.push(line);
+  var fs=Math.floor(state.w/25);
+  lines.forEach(function(l,i){wCtx.fillText(l,state.w*0.15,state.h*0.3+i*fs*1.5)});
+  // Barcode placeholder
+  wCtx.fillStyle=state.textColor;wCtx.globalAlpha=0.3;
+  wCtx.fillRect(state.w*0.3,state.h*0.75,state.w*0.4,state.h*0.12);
+  wCtx.globalAlpha=1;wCtx.fillStyle=state.bgColor;wCtx.font='bold 14px monospace';
+  wCtx.textAlign='center';wCtx.fillText('ISBN BARCODE',state.w*0.5,state.h*0.82);
+
+  // Spine
+  wCtx.fillStyle=state.accentColor;wCtx.fillRect(state.w,0,spineW,state.h);
+  wCtx.save();wCtx.translate(state.w+spineW/2,state.h/2);wCtx.rotate(-Math.PI/2);
+  wCtx.fillStyle=state.textColor;wCtx.font='bold '+Math.min(spineW*0.6,16)+'px '+state.font;
+  wCtx.textAlign='center';
+  var st=state.spineText||state.title;
+  wCtx.fillText(st+' | '+state.author,0,0);
+  wCtx.restore();
+
+  // Front cover
+  wCtx.drawImage(canvas,state.w+spineW,0);
+
+  var a=document.createElement('a');a.download='cover-wrap.png';a.href=wrapCanvas.toDataURL('image/png');a.click();
+});
+
+document.getElementById('dlSvg').addEventListener('click',function(){
+  var ts=Math.floor(state.w/10);
+  var svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+state.w+'" height="'+state.h+'">';
+  svg+='<rect width="'+state.w+'" height="'+state.h+'" fill="'+state.bgColor+'"/>';
+  svg+='<text x="'+state.w/2+'" y="'+state.h*0.4+'" text-anchor="middle" font-family="'+state.font+',serif" font-size="'+ts+'" font-weight="bold" fill="'+state.textColor+'">'+state.title+'</text>';
+  if(state.subtitle) svg+='<text x="'+state.w/2+'" y="'+(state.h*0.4+ts*1.2)+'" text-anchor="middle" font-family="'+state.font+',serif" font-size="'+Math.floor(ts*0.45)+'" fill="'+state.textColor+'" opacity="0.8">'+state.subtitle+'</text>';
+  svg+='<text x="'+state.w/2+'" y="'+state.h*0.85+'" text-anchor="middle" font-family="'+state.font+',serif" font-size="'+Math.floor(ts*0.4)+'" fill="'+state.textColor+'" opacity="0.7">'+state.author+'</text>';
+  svg+='</svg>';
+  var blob=new Blob([svg],{type:'image/svg+xml'});
+  var a=document.createElement('a');a.download='cover.svg';a.href=URL.createObjectURL(blob);a.click();
+});
+
+draw();
+})();
+</script>
+</body>
+</html>

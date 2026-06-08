@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Book Blurb Generator — FreeBookStore</title>
+<meta name="description" content="Generate book blurbs from genre, character, and conflict. Template-based and AI modes.">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#faf9f7;--panel:#fff;--ink:#1c1917;--muted:#78716c;--accent:#b45309;--line:#e7e5e4}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+
+.top-bar{display:flex;align-items:center;gap:.75rem;padding:.6rem 1.2rem;border-bottom:1px solid var(--line);background:var(--panel)}
+.back{font-size:.82rem;font-weight:600;color:var(--muted);text-decoration:none}
+.back:hover{color:var(--ink);text-decoration:none}
+.top-bar h1{font-family:'Lora',serif;font-size:1.1rem;font-weight:700}
+
+.container{max-width:800px;margin:0 auto;padding:1.5rem}
+
+.input-section{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:1.2rem;margin-bottom:1.5rem}
+.input-section h2{font-family:'Lora',serif;font-size:1rem;margin-bottom:.75rem}
+.field{margin-bottom:.6rem}
+.field label{display:block;font-size:.72rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.3px;margin-bottom:.2rem}
+.field input,.field textarea,.field select{width:100%;font-family:inherit;font-size:.82rem;border:1px solid var(--line);border-radius:6px;padding:.4rem .6rem;background:var(--bg);outline:none}
+.field input:focus,.field textarea:focus{border-color:var(--accent)}
+.field textarea{height:60px;resize:vertical}
+.genre-grid{display:flex;gap:.3rem;flex-wrap:wrap}
+.genre-btn{padding:.3rem .7rem;border:1px solid var(--line);border-radius:6px;background:var(--panel);cursor:pointer;font-size:.75rem;font-weight:600;font-family:inherit;color:var(--muted);transition:all .15s}
+.genre-btn:hover{border-color:var(--accent)}
+.genre-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+.actions{display:flex;gap:.5rem;margin-bottom:1.5rem;flex-wrap:wrap}
+.btn{padding:.5rem 1rem;border:none;border-radius:8px;background:var(--accent);color:#fff;font-size:.85rem;font-weight:600;cursor:pointer;font-family:inherit}
+.btn:hover{background:#92400e}
+.btn.secondary{background:var(--panel);color:var(--muted);border:1px solid var(--line)}
+.btn.secondary:hover{border-color:var(--accent);color:var(--accent);background:var(--panel)}
+.btn:disabled{opacity:.5;cursor:default}
+
+.blurbs-section{margin-bottom:1.5rem}
+.blurbs-section h3{font-family:'Lora',serif;font-size:1rem;margin-bottom:.5rem}
+.blurb-card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:1rem;margin-bottom:.5rem;position:relative}
+.blurb-card .blurb-text{font-family:'Lora',serif;font-size:.92rem;line-height:1.7;color:var(--ink);min-height:60px}
+.blurb-card .blurb-text[contenteditable]{outline:none;border:1px solid transparent;border-radius:4px;padding:.2rem}
+.blurb-card .blurb-text[contenteditable]:focus{border-color:var(--accent)}
+.blurb-actions{display:flex;gap:.3rem;margin-top:.5rem}
+.blurb-btn{padding:.2rem .5rem;border:1px solid var(--line);border-radius:4px;background:var(--panel);cursor:pointer;font-size:.68rem;font-weight:600;font-family:inherit;color:var(--muted)}
+.blurb-btn:hover{border-color:var(--accent);color:var(--accent)}
+.blurb-label{position:absolute;top:.5rem;right:.5rem;font-size:.62rem;color:var(--muted);background:var(--bg);padding:.1rem .4rem;border-radius:3px}
+
+.history-section{margin-top:2rem;border-top:1px solid var(--line);padding-top:1rem}
+.history-section h3{font-family:'Lora',serif;font-size:.9rem;margin-bottom:.5rem;color:var(--muted)}
+.history-item{padding:.5rem;border-bottom:1px solid var(--line);font-size:.78rem;color:var(--muted);cursor:pointer;transition:color .15s}
+.history-item:hover{color:var(--ink)}
+.history-item .h-genre{color:var(--accent);font-weight:600}
+
+footer{text-align:center;padding:1.5rem;font-size:.7rem;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="top-bar">
+<a href="/" class="back">< FreeBookStore</a>
+<h1>Book Blurb Generator</h1>
+</div>
+
+<div class="container">
+<div class="input-section">
+<h2>Tell Us About Your Book</h2>
+<div class="field"><label>Genre</label>
+<div class="genre-grid" id="genreGrid">
+<button class="genre-btn" data-genre="Mystery">Mystery</button>
+<button class="genre-btn" data-genre="Romance">Romance</button>
+<button class="genre-btn" data-genre="Sci-Fi">Sci-Fi</button>
+<button class="genre-btn active" data-genre="Fantasy">Fantasy</button>
+<button class="genre-btn" data-genre="Thriller">Thriller</button>
+<button class="genre-btn" data-genre="Literary">Literary</button>
+<button class="genre-btn" data-genre="Non-Fiction">Non-Fiction</button>
+</div></div>
+<div class="field"><label>Main Character</label><input id="character" placeholder="e.g., A young archaeologist with a hidden past"></div>
+<div class="field"><label>Setting</label><input id="setting" placeholder="e.g., A crumbling castle in 19th-century Scotland"></div>
+<div class="field"><label>Central Conflict</label><textarea id="conflict" placeholder="e.g., Must decode an ancient map before a rival treasure hunter..."></textarea></div>
+<div class="field"><label>Stakes</label><input id="stakes" placeholder="e.g., Or the artifact's power will fall into the wrong hands"></div>
+</div>
+
+<div class="actions">
+<button class="btn" id="generateBtn">Generate 3 Blurbs</button>
+<button class="btn secondary" id="aiBtn">AI Generate (Chrome AI)</button>
+</div>
+
+<div class="blurbs-section" id="blurbsSection" style="display:none">
+<h3>Your Blurbs</h3>
+<div id="blurbsList"></div>
+</div>
+
+<div class="history-section" id="historySection">
+<h3>History</h3>
+<div id="historyList"></div>
+</div>
+</div>
+
+<footer>FreeBookStore</footer>
+<script src="/related.js"></script>
+<script>
+(function(){
+var selectedGenre='Fantasy';
+var history=JSON.parse(localStorage.getItem('fbook-blurbs')||'[]');
+
+var TEMPLATES={
+  Mystery:[
+    "When {character} discovers {conflict}, nothing is as it seems. Set against {setting}, every clue leads deeper into a web of deception. {stakes}. But the truth might be more dangerous than the mystery itself. Who can be trusted when everyone has something to hide?",
+    "In {setting}, {character} is drawn into {conflict}. The evidence doesn't add up, the suspects all have alibis, and time is running out. {stakes}. A page-turning mystery that will keep you guessing until the final revelation.",
+    "{character} thought they'd seen it all. Then {conflict} shattered everything they believed. Now, navigating the shadows of {setting}, they must piece together the truth before {stakes}. Nothing is what it seems in this gripping mystery."
+  ],
+  Romance:[
+    "In {setting}, {character} never expected to find love. But when {conflict}, two hearts collide in ways neither anticipated. {stakes}. A story about second chances, vulnerability, and the courage it takes to let someone in.",
+    "{character} has built walls for good reason. Set in {setting}, {conflict} forces them to confront feelings they've long buried. {stakes}. But can they trust their heart when everything else is uncertain?",
+    "They were never supposed to meet. In {setting}, {character} crosses paths with someone who challenges everything they thought they wanted. When {conflict}, both must decide: play it safe or risk everything. {stakes}."
+  ],
+  'Sci-Fi':[
+    "In {setting}, {character} stumbles upon {conflict}. What begins as a discovery becomes a fight for survival. {stakes}. The future isn't what anyone predicted — it's far more dangerous and far more wondrous.",
+    "The year is uncertain. The place: {setting}. {character} must face {conflict} in a world where technology has outpaced humanity's ability to control it. {stakes}. A thrilling exploration of what it means to be human.",
+    "{character} lives in {setting}, where {conflict} threatens to unravel the fabric of reality itself. {stakes}. Science fiction at its most thought-provoking and pulse-pounding."
+  ],
+  Fantasy:[
+    "In {setting}, {character} discovers {conflict}. Ancient prophecies stir, forgotten powers awaken, and nothing will ever be the same. {stakes}. An epic fantasy that will transport you to a world of wonder and peril.",
+    "Magic has a price. In {setting}, {character} faces {conflict} — a challenge that demands everything and promises nothing. {stakes}. A sweeping tale of courage, sacrifice, and the power that lies within us all.",
+    "{character} has always felt different. Now, thrust into {setting}, they must navigate {conflict}. {stakes}. But the greatest battle isn't against darkness — it's against the doubt within."
+  ],
+  Thriller:[
+    "Time is running out. In {setting}, {character} faces {conflict}. Every move is watched, every decision could be their last. {stakes}. A white-knuckle thriller that doesn't let up from the first page to the last.",
+    "{character} knows too much. Trapped in {setting}, they must outrun {conflict} while {stakes}. Trust no one. Question everything. Survive. A propulsive thriller that will keep you reading through the night.",
+    "One wrong move and it's over. {character} in {setting} confronts {conflict}. The clock is ticking, the danger is real, and {stakes}. A relentless thriller crafted for readers who demand non-stop suspense."
+  ],
+  Literary:[
+    "In {setting}, {character} grapples with {conflict}. A luminous exploration of identity, connection, and what we owe to those we love. {stakes}. Literary fiction at its most moving and insightful.",
+    "{character} navigates the complexities of {setting}, where {conflict} forces a reckoning with the past. {stakes}. A beautifully written novel about the stories we tell ourselves and the truths we avoid.",
+    "Set against the backdrop of {setting}, this is the story of {character} and their struggle with {conflict}. {stakes}. An intimate, powerful novel about resilience and the quiet heroism of ordinary life."
+  ],
+  'Non-Fiction':[
+    "What if everything you thought you knew about this topic was wrong? In this groundbreaking book, {character} reveals {conflict}. Drawing on {setting}, {stakes}. Essential reading for anyone who wants to understand the world differently.",
+    "{character} takes you inside {setting} to uncover {conflict}. With meticulous research and compelling storytelling, {stakes}. A book that will change how you see everything.",
+    "Part memoir, part investigation: {character} explores {conflict} through the lens of {setting}. {stakes}. A riveting work of non-fiction that reads like a novel."
+  ]
+};
+
+// Genre selection
+document.querySelectorAll('.genre-btn').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    document.querySelectorAll('.genre-btn').forEach(function(b){b.classList.remove('active')});
+    btn.classList.add('active');
+    selectedGenre=btn.dataset.genre;
+  });
+});
+
+function getInputs(){
+  return{
+    character:document.getElementById('character').value||'a protagonist',
+    setting:document.getElementById('setting').value||'an unfamiliar world',
+    conflict:document.getElementById('conflict').value||'an impossible challenge',
+    stakes:document.getElementById('stakes').value||'Everything hangs in the balance'
+  };
+}
+
+function fillTemplate(tmpl,inputs){
+  return tmpl.replace(/\{character\}/g,inputs.character)
+    .replace(/\{setting\}/g,inputs.setting)
+    .replace(/\{conflict\}/g,inputs.conflict)
+    .replace(/\{stakes\}/g,inputs.stakes);
+}
+
+document.getElementById('generateBtn').addEventListener('click',function(){
+  var inputs=getInputs();
+  var templates=TEMPLATES[selectedGenre]||TEMPLATES.Fantasy;
+  var blurbs=templates.map(function(t){return fillTemplate(t,inputs)});
+  renderBlurbs(blurbs,'Template');
+
+  history.unshift({genre:selectedGenre,blurbs:blurbs,date:new Date().toISOString(),inputs:inputs});
+  if(history.length>20) history=history.slice(0,20);
+  localStorage.setItem('fbook-blurbs',JSON.stringify(history));
+  renderHistory();
+});
+
+document.getElementById('aiBtn').addEventListener('click',async function(){
+  if(!window.ai||!window.ai.languageModel){
+    alert('Chrome AI not available. Requires Chrome 138+ with built-in AI enabled.');return;
+  }
+  var inputs=getInputs();
+  this.disabled=true;this.textContent='Generating...';
+  try{
+    var session=await window.ai.languageModel.create({systemPrompt:'You are a book marketing copywriter. Generate compelling back-cover blurbs. Each blurb should follow: hook sentence, character introduction, conflict setup, stakes, closing question or statement. Keep each under 100 words.'});
+    var prompt='Write 3 different book blurbs for a '+selectedGenre+' book:\nCharacter: '+inputs.character+'\nSetting: '+inputs.setting+'\nConflict: '+inputs.conflict+'\nStakes: '+inputs.stakes+'\n\nSeparate each blurb with ---';
+    var result=await session.prompt(prompt);
+    var blurbs=result.split('---').map(function(b){return b.trim()}).filter(Boolean).slice(0,3);
+    if(blurbs.length===0) blurbs=['(AI did not generate valid blurbs. Try again.)'];
+    renderBlurbs(blurbs,'AI');
+  }catch(e){alert('AI error: '+e.message)}
+  this.disabled=false;this.textContent='AI Generate (Chrome AI)';
+});
+
+function renderBlurbs(blurbs,source){
+  var section=document.getElementById('blurbsSection');
+  section.style.display='block';
+  var list=document.getElementById('blurbsList');
+  list.innerHTML='';
+  blurbs.forEach(function(b,i){
+    var card=document.createElement('div');card.className='blurb-card';
+    card.innerHTML='<span class="blurb-label">'+source+' #'+(i+1)+'</span>'+
+      '<div class="blurb-text" contenteditable="true">'+b+'</div>'+
+      '<div class="blurb-actions">'+
+      '<button class="blurb-btn copy-btn" data-idx="'+i+'">Copy</button>'+
+      '</div>';
+    card.querySelector('.copy-btn').addEventListener('click',function(){
+      var text=card.querySelector('.blurb-text').textContent;
+      navigator.clipboard.writeText(text).then(function(){
+        var btn=card.querySelector('.copy-btn');btn.textContent='Copied!';
+        setTimeout(function(){btn.textContent='Copy'},1500);
+      });
+    });
+    list.appendChild(card);
+  });
+}
+
+function renderHistory(){
+  var list=document.getElementById('historyList');
+  list.innerHTML='';
+  if(history.length===0){list.innerHTML='<p style="font-size:.78rem;color:var(--muted)">No blurbs generated yet.</p>';return}
+  history.slice(0,10).forEach(function(h){
+    var div=document.createElement('div');div.className='history-item';
+    div.innerHTML='<span class="h-genre">'+h.genre+'</span> — '+h.blurbs[0].substring(0,80)+'...';
+    div.addEventListener('click',function(){renderBlurbs(h.blurbs,'History')});
+    list.appendChild(div);
+  });
+}
+
+renderHistory();
+})();
+</script>
+</body>
+</html>

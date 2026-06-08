@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Reading Tracker — FreeBookStore</title>
+<meta name="description" content="Track books you're reading, log pages, set goals, view reading charts. All stored locally.">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#faf9f7;--panel:#fff;--ink:#1c1917;--muted:#78716c;--accent:#b45309;--line:#e7e5e4}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+
+.top-bar{display:flex;align-items:center;gap:.75rem;padding:.6rem 1.2rem;border-bottom:1px solid var(--line);background:var(--panel)}
+.back{font-size:.82rem;font-weight:600;color:var(--muted);text-decoration:none}
+.back:hover{color:var(--ink);text-decoration:none}
+.top-bar h1{font-family:'Lora',serif;font-size:1.1rem;font-weight:700}
+
+.container{max-width:900px;margin:0 auto;padding:1.5rem}
+
+.stats-overview{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:.5rem;margin-bottom:1.5rem}
+.stat-card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:.75rem;text-align:center}
+.stat-card .val{font-family:'Lora',serif;font-size:1.5rem;font-weight:700;color:var(--accent)}
+.stat-card .label{font-size:.68rem;color:var(--muted);margin-top:.1rem}
+
+.goal-section{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:.75rem 1rem;margin-bottom:1rem;display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}
+.goal-section label{font-size:.75rem;color:var(--muted);font-weight:600}
+.goal-section input{width:60px;font-family:inherit;font-size:.82rem;border:1px solid var(--line);border-radius:4px;padding:.2rem .4rem;text-align:center}
+.goal-progress{flex:1;min-width:150px}
+.goal-bar{height:8px;background:var(--line);border-radius:4px;overflow:hidden}
+.goal-fill{height:100%;background:var(--accent);transition:width .3s}
+.goal-text{font-size:.68rem;color:var(--muted);margin-top:.2rem}
+
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--line);margin-bottom:1rem}
+.tab{padding:.5rem 1rem;font-size:.82rem;font-weight:600;color:var(--muted);background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;font-family:inherit}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+
+.shelf{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:.5rem;margin-bottom:1.5rem}
+.book-card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:.75rem;transition:border-color .15s}
+.book-card:hover{border-color:var(--accent)}
+.book-card h4{font-family:'Lora',serif;font-size:.88rem;margin-bottom:.15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.book-card .author{font-size:.72rem;color:var(--muted);margin-bottom:.4rem}
+.progress-row{display:flex;align-items:center;gap:.4rem;margin-bottom:.3rem}
+.progress-row .bar{flex:1;height:6px;background:var(--line);border-radius:3px;overflow:hidden}
+.progress-row .fill{height:100%;background:var(--accent);transition:width .3s}
+.progress-row .pct{font-size:.68rem;color:var(--accent);font-weight:600;min-width:30px;text-align:right}
+.book-card .pages{font-size:.68rem;color:var(--muted)}
+.book-card .actions{display:flex;gap:.3rem;margin-top:.4rem}
+.book-card .actions button{padding:.2rem .4rem;border:1px solid var(--line);border-radius:4px;background:var(--panel);cursor:pointer;font-size:.65rem;font-family:inherit;color:var(--muted)}
+.book-card .actions button:hover{border-color:var(--accent);color:var(--accent)}
+.book-card .actions .complete-btn{color:#16a34a;border-color:#16a34a20}
+
+.add-form{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:1rem;margin-bottom:1rem}
+.add-form h3{font-family:'Lora',serif;font-size:.9rem;margin-bottom:.5rem}
+.form-row{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:.4rem}
+.form-row input{flex:1;min-width:120px;font-family:inherit;font-size:.78rem;border:1px solid var(--line);border-radius:6px;padding:.35rem .5rem;background:var(--bg);outline:none}
+.form-row input:focus{border-color:var(--accent)}
+.btn{padding:.4rem .8rem;border:none;border-radius:6px;background:var(--accent);color:#fff;font-size:.78rem;font-weight:600;cursor:pointer;font-family:inherit}
+.btn:hover{background:#92400e}
+
+.log-form{display:flex;gap:.3rem;align-items:center;flex-wrap:wrap;padding:.5rem;background:var(--bg);border-radius:6px;margin-top:.3rem}
+.log-form input{width:60px;font-family:inherit;font-size:.72rem;border:1px solid var(--line);border-radius:4px;padding:.2rem .3rem;text-align:center}
+.log-form button{padding:.2rem .5rem;border:none;border-radius:4px;background:var(--accent);color:#fff;cursor:pointer;font-size:.68rem;font-family:inherit}
+
+.chart-section{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:1rem;margin-top:1rem}
+.chart-section h3{font-family:'Lora',serif;font-size:.9rem;margin-bottom:.5rem}
+.chart{display:flex;align-items:flex-end;gap:.3rem;height:120px;padding-top:.5rem}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:.2rem}
+.bar-col .bar{width:100%;max-width:40px;background:var(--accent);border-radius:3px 3px 0 0;transition:height .3s;min-height:2px}
+.bar-col .bar-label{font-size:.6rem;color:var(--muted)}
+.bar-col .bar-val{font-size:.6rem;color:var(--accent);font-weight:600}
+
+.empty{text-align:center;padding:2rem;color:var(--muted);font-size:.85rem}
+
+footer{text-align:center;padding:1.5rem;font-size:.7rem;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="top-bar">
+<a href="/" class="back">< FreeBookStore</a>
+<h1>Reading Tracker</h1>
+</div>
+
+<div class="container">
+<div class="stats-overview" id="statsOverview"></div>
+
+<div class="goal-section">
+<label>2026 Goal:</label>
+<input type="number" id="goalInput" min="1" max="365" value="24">
+<span style="font-size:.72rem;color:var(--muted)">books</span>
+<div class="goal-progress"><div class="goal-bar"><div class="goal-fill" id="goalFill"></div></div><div class="goal-text" id="goalText"></div></div>
+</div>
+
+<div class="tabs">
+<button class="tab active" data-tab="reading">Currently Reading</button>
+<button class="tab" data-tab="completed">Completed</button>
+<button class="tab" data-tab="want">Want to Read</button>
+<button class="tab" data-tab="charts">Charts</button>
+</div>
+
+<div class="add-form">
+<h3>Add a Book</h3>
+<div class="form-row">
+<input id="addTitle" placeholder="Title">
+<input id="addAuthor" placeholder="Author">
+<input id="addPages" type="number" placeholder="Pages" min="1" style="max-width:80px">
+<select id="addShelf" style="font-family:inherit;font-size:.78rem;border:1px solid var(--line);border-radius:6px;padding:.35rem">
+<option value="reading">Currently Reading</option>
+<option value="want">Want to Read</option>
+</select>
+<button class="btn" id="addBookBtn">Add</button>
+</div>
+</div>
+
+<div class="shelf" id="shelfGrid"></div>
+
+<div class="chart-section" id="chartSection" style="display:none">
+<h3>Pages Read Per Month</h3>
+<div class="chart" id="monthChart"></div>
+</div>
+</div>
+
+<footer>FreeBookStore</footer>
+<script src="/related.js"></script>
+<script>
+(function(){
+var books=JSON.parse(localStorage.getItem('fbook-tracker-books')||'[]');
+var goal=parseInt(localStorage.getItem('fbook-tracker-goal')||'24');
+var currentTab='reading';
+
+function save(){localStorage.setItem('fbook-tracker-books',JSON.stringify(books));localStorage.setItem('fbook-tracker-goal',goal)}
+
+// Tabs
+document.querySelectorAll('.tab').forEach(function(tab){
+  tab.addEventListener('click',function(){
+    document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active')});
+    tab.classList.add('active');
+    currentTab=tab.dataset.tab;
+    render();
+  });
+});
+
+// Goal
+document.getElementById('goalInput').value=goal;
+document.getElementById('goalInput').addEventListener('change',function(){
+  goal=parseInt(this.value)||24;save();renderStats();
+});
+
+function renderStats(){
+  var now=new Date();var year=now.getFullYear();
+  var completed=books.filter(function(b){return b.shelf==='completed'&&b.completedDate&&new Date(b.completedDate).getFullYear()===year});
+  var totalPages=0;var thisMonth=0;
+  books.forEach(function(b){
+    (b.log||[]).forEach(function(l){
+      totalPages+=l.pages||0;
+      if(new Date(l.date).getMonth()===now.getMonth()&&new Date(l.date).getFullYear()===year) thisMonth+=l.pages||0;
+    });
+  });
+  var reading=books.filter(function(b){return b.shelf==='reading'}).length;
+  var avgPerDay=totalPages>0?Math.round(totalPages/Math.max(1,dayOfYear())):0;
+
+  document.getElementById('statsOverview').innerHTML=
+    '<div class="stat-card"><div class="val">'+completed.length+'</div><div class="label">Books This Year</div></div>'+
+    '<div class="stat-card"><div class="val">'+thisMonth+'</div><div class="label">Pages This Month</div></div>'+
+    '<div class="stat-card"><div class="val">'+reading+'</div><div class="label">Currently Reading</div></div>'+
+    '<div class="stat-card"><div class="val">'+avgPerDay+'</div><div class="label">Avg Pages/Day</div></div>';
+
+  var pct=Math.min(100,Math.round(completed.length/goal*100));
+  document.getElementById('goalFill').style.width=pct+'%';
+  document.getElementById('goalText').textContent=completed.length+'/'+goal+' books ('+pct+'%)';
+}
+
+function dayOfYear(){var now=new Date();var start=new Date(now.getFullYear(),0,0);return Math.floor((now-start)/86400000)}
+
+function render(){
+  var grid=document.getElementById('shelfGrid');
+  grid.innerHTML='';
+  document.getElementById('chartSection').style.display=currentTab==='charts'?'block':'none';
+  if(currentTab==='charts'){renderChart();return}
+
+  var filtered=books.filter(function(b){return b.shelf===currentTab});
+  if(filtered.length===0){grid.innerHTML='<div class="empty">No books here yet. Add one above!</div>';renderStats();return}
+
+  filtered.forEach(function(book,i){
+    var card=document.createElement('div');card.className='book-card';
+    var pct=book.totalPages>0?Math.round((book.currentPage||0)/book.totalPages*100):0;
+
+    var html='<h4>'+book.title+'</h4><div class="author">'+book.author+'</div>';
+    if(book.shelf==='reading'){
+      html+='<div class="progress-row"><div class="bar"><div class="fill" style="width:'+pct+'%"></div></div><span class="pct">'+pct+'%</span></div>';
+      html+='<div class="pages">Page '+(book.currentPage||0)+' of '+book.totalPages+'</div>';
+      html+='<div class="log-form"><input type="number" class="log-pages" placeholder="Pages" min="1"><input type="text" class="log-notes" placeholder="Notes" style="width:100px"><button class="log-btn">Log</button></div>';
+    } else if(book.shelf==='completed'){
+      html+='<div class="pages">'+book.totalPages+' pages | Completed '+(book.completedDate?new Date(book.completedDate).toLocaleDateString():'')+'</div>';
+    } else {
+      html+='<div class="pages">'+book.totalPages+' pages</div>';
+    }
+    html+='<div class="actions">';
+    if(book.shelf==='reading') html+='<button class="complete-btn" data-idx="'+i+'">Mark Complete</button>';
+    if(book.shelf==='want') html+='<button class="start-btn" data-idx="'+i+'">Start Reading</button>';
+    html+='<button class="del-btn" data-idx="'+i+'">Remove</button></div>';
+
+    card.innerHTML=html;
+
+    // Log reading
+    if(book.shelf==='reading'){
+      card.querySelector('.log-btn').addEventListener('click',function(){
+        var pages=parseInt(card.querySelector('.log-pages').value)||0;
+        var notes=card.querySelector('.log-notes').value;
+        if(pages<=0) return;
+        if(!book.log) book.log=[];
+        book.log.push({date:new Date().toISOString(),pages:pages,notes:notes});
+        book.currentPage=Math.min(book.totalPages,(book.currentPage||0)+pages);
+        card.querySelector('.log-pages').value='';card.querySelector('.log-notes').value='';
+        save();render();
+      });
+    }
+
+    // Complete
+    var completeBtn=card.querySelector('.complete-btn');
+    if(completeBtn) completeBtn.addEventListener('click',function(){
+      var idx=books.indexOf(filtered[i]);
+      books[idx].shelf='completed';books[idx].completedDate=new Date().toISOString();
+      books[idx].currentPage=books[idx].totalPages;
+      save();render();
+    });
+
+    // Start
+    var startBtn=card.querySelector('.start-btn');
+    if(startBtn) startBtn.addEventListener('click',function(){
+      var idx=books.indexOf(filtered[i]);
+      books[idx].shelf='reading';books[idx].currentPage=0;books[idx].log=[];
+      save();render();
+    });
+
+    // Delete
+    card.querySelector('.del-btn').addEventListener('click',function(){
+      if(!confirm('Remove "'+book.title+'"?')) return;
+      var idx=books.indexOf(filtered[i]);
+      books.splice(idx,1);save();render();
+    });
+
+    grid.appendChild(card);
+  });
+  renderStats();
+}
+
+function renderChart(){
+  var chart=document.getElementById('monthChart');
+  chart.innerHTML='';
+  var months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var year=new Date().getFullYear();
+  var pagesPerMonth=new Array(12).fill(0);
+
+  books.forEach(function(b){
+    (b.log||[]).forEach(function(l){
+      var d=new Date(l.date);
+      if(d.getFullYear()===year) pagesPerMonth[d.getMonth()]+=(l.pages||0);
+    });
+  });
+
+  var max=Math.max.apply(null,pagesPerMonth)||1;
+  months.forEach(function(m,i){
+    var col=document.createElement('div');col.className='bar-col';
+    var h=Math.round(pagesPerMonth[i]/max*100);
+    col.innerHTML='<span class="bar-val">'+(pagesPerMonth[i]||'')+'</span><div class="bar" style="height:'+h+'px"></div><span class="bar-label">'+m+'</span>';
+    chart.appendChild(col);
+  });
+  renderStats();
+}
+
+// Add book
+document.getElementById('addBookBtn').addEventListener('click',function(){
+  var title=document.getElementById('addTitle').value.trim();
+  var author=document.getElementById('addAuthor').value.trim();
+  var pages=parseInt(document.getElementById('addPages').value)||0;
+  var shelf=document.getElementById('addShelf').value;
+  if(!title){alert('Enter a title.');return}
+  books.push({title:title,author:author||'Unknown',totalPages:pages,currentPage:0,shelf:shelf,log:[],addedDate:new Date().toISOString()});
+  document.getElementById('addTitle').value='';document.getElementById('addAuthor').value='';document.getElementById('addPages').value='';
+  save();render();
+});
+
+render();
+})();
+</script>
+</body>
+</html>
